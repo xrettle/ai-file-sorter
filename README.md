@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD046 -->
 # AI File Sorter
 
-[![Code Version](https://img.shields.io/badge/Code-1.6.1-blue)](#)
+[![Code Version](https://img.shields.io/badge/Code-1.6.2-blue)](#)
 [![Release Version](https://img.shields.io/github/v/release/hyperfield/ai-file-sorter?label=Release)](#)
 [![SourceForge Downloads](https://img.shields.io/sourceforge/dt/ai-file-sorter.svg?label=SourceForge%20downloads)](https://sourceforge.net/projects/ai-file-sorter/files/latest/download)
 [![SourceForge Downloads](https://img.shields.io/sourceforge/dw/ai-file-sorter.svg?label=SourceForge%20downloads)](https://sourceforge.net/projects/ai-file-sorter/files/latest/download)
@@ -91,24 +91,14 @@ AI File Sorter runs entirely on your device, using local AI models such as LLaMa
 
 ## Changelog
 
+## [1.6.2] - 2026-02-25
+
+- Fixed category parsing so non-standard LLM output formats no longer create malformed merged folder names.
+- Expanded taxonomy normalization to collapse common category synonyms (for example backups/archives, images/media/photos, documents/texts/papers, software/installers/updates).
+
 ## [1.6.1] - 2026-02-06
 
 - Local text LLM now prompts to switch to CPU when GPU initialization or inference fails.
-
-## [1.6.0] - 2026-02-04
-
-- Added document content analysis (text LLM) with optional creation-date suffixes for categories. Supported document formats include PDF, DOCX, XLSX, PPTX, ODT, ODS, and ODP (plus common text formats).
-- Local 3B model download now defaults to Q4 for better GPU compatibility. The legacy Local 3B Q8 is still selectable when an existing download is found.
-- Improved the LLM selection dialog latency.
-- Added custom API endpoints to the Select LLM dialog. Custom endpoints accept base URLs or full /chat/completions endpoints, with optional API keys for local servers.
-- LLM-derived categorizations and rename suggestions are now saved as you go, so progress isn't lost if the app closes unexpectedly.
-- Image analysis now falls back (with a user prompt) to CPU if the GPU has insufficient available memory.
-- Review dialog now lets you select highlighted rows and bulk edit their categories.
-- Review dialog is now scrollable on smaller screens so action buttons stay visible.
-- Improved subcategory consistency by merging labels that only differ by generic suffixes (e.g., “files”).
-- Added a system compatibility check (benchmarking) to determine the most suitable LLM for your system.
-- Added Korean as an interface language.
-- UI, stability, persistence, and usability improvements.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 

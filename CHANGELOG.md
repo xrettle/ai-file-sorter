@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## [1.6.2] - 2026-02-25
+
+- Fixed category parsing so non-standard LLM output formats no longer create malformed merged folder names.
+- Expanded taxonomy normalization to collapse common category synonyms (for example backups/archives, images/media/photos, documents/texts/papers, software/installers/updates).
+
 ## [1.6.1] - 2026-02-06
 
 - Local text LLM now prompts to switch to CPU when GPU initialization or inference fails.
