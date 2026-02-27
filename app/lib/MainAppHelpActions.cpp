@@ -125,6 +125,6 @@ void MainAppHelpActions::show_agpl_info(QWidget* parent)
 
 void MainAppHelpActions::open_support_page()
 {
-    const QUrl donation_url(QStringLiteral("https://www.paypal.com/donate/?hosted_button_id=Z3XYTG38C62HQ"));
+    const QUrl donation_url(QStringLiteral("https://filesorter.app/donate/"));
     QDesktopServices::openUrl(donation_url);
 }
