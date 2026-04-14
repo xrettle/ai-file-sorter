@@ -517,7 +517,11 @@ FileScanOptions MainWindowStateBinder::effective_scan_options() const
     const bool images_only = analyze_images && app_.settings.get_process_images_only();
     const bool documents_only = analyze_documents && app_.settings.get_process_documents_only();
     if (images_only || documents_only) {
-        return FileScanOptions::Files;
+        FileScanOptions options = FileScanOptions::Files;
+        if (app_.settings.get_include_subdirectories()) {
+            options = options | FileScanOptions::Recursive;
+        }
+        return options;
     }
     FileScanOptions options = app_.file_scan_options;
     if (analyze_images || analyze_documents) {
@@ -608,6 +612,8 @@ void MainWindowStateBinder::update_image_only_controls()
     const bool allow_other_files = !restrict_types;
     const bool images_rename_only = allow_images ? rename_images_active : true;
     const bool documents_rename_only = allow_documents ? rename_documents_active : true;
+    const bool document_group_locked = images_only_active;
+    const bool document_analysis_enabled = analyze_documents && !document_group_locked;
     const bool disable_files_categorization =
         !allow_other_files && images_rename_only && documents_rename_only;
     const bool include_subdirs_active = app_.include_subdirectories_checkbox &&
@@ -640,6 +646,37 @@ void MainWindowStateBinder::update_image_only_controls()
                                        app_.use_whitelist_checkbox &&
                                        app_.use_whitelist_checkbox->isChecked();
         app_.whitelist_selector->setEnabled(whitelist_enabled);
+    }
+    if (app_.add_audio_video_metadata_to_filename_checkbox) {
+        app_.add_audio_video_metadata_to_filename_checkbox->setEnabled(allow_other_files);
+    }
+    if (app_.analyze_documents_checkbox) {
+        app_.analyze_documents_checkbox->setEnabled(!document_group_locked);
+    }
+    if (app_.process_documents_only_checkbox) {
+        app_.process_documents_only_checkbox->setEnabled(document_analysis_enabled);
+    }
+    if (app_.offer_rename_documents_checkbox) {
+        app_.offer_rename_documents_checkbox->setEnabled(document_analysis_enabled);
+    }
+    if (app_.rename_documents_only_checkbox) {
+        app_.rename_documents_only_checkbox->setEnabled(document_analysis_enabled);
+    }
+    if (app_.add_document_date_to_category_checkbox) {
+        app_.add_document_date_to_category_checkbox->setEnabled(
+            document_analysis_enabled && !documents_rename_only);
+    }
+    if (app_.document_options_toggle_button) {
+        app_.document_options_toggle_button->setEnabled(document_analysis_enabled);
+        sync_disclosure_button(app_.document_options_toggle_button,
+                               app_.document_options_toggle_button->isChecked());
+    }
+    if (app_.document_options_container) {
+        const bool expanded = app_.document_options_toggle_button
+            ? app_.document_options_toggle_button->isChecked()
+            : true;
+        app_.document_options_container->setEnabled(!document_group_locked);
+        app_.document_options_container->setVisible(document_analysis_enabled && expanded);
     }
 }
 

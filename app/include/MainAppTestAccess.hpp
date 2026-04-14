@@ -55,6 +55,12 @@ public:
      */
     static QCheckBox* categorize_files_checkbox(MainApp& app);
     /**
+     * @brief Resolve the effective scan options currently selected in the UI.
+     * @param app MainApp instance.
+     * @return Effective scan options used for enumeration.
+     */
+    static FileScanOptions effective_scan_options(const MainApp& app);
+    /**
      * @brief Access the \"Analyze picture files\" checkbox.
      * @param app MainApp instance.
      * @return Pointer to the checkbox, or nullptr if unavailable.

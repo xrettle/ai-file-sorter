@@ -27,6 +27,10 @@ QCheckBox* MainAppTestAccess::categorize_files_checkbox(MainApp& app) {
     return app.categorize_files_checkbox;
 }
 
+FileScanOptions MainAppTestAccess::effective_scan_options(const MainApp& app) {
+    return app.effective_scan_options();
+}
+
 QCheckBox* MainAppTestAccess::analyze_images_checkbox(MainApp& app) {
     return app.analyze_images_checkbox;
 }

@@ -204,6 +204,89 @@ TEST_CASE("Image rename-only does not disable categorization unless processing i
     CHECK_FALSE(categorize_files->isEnabled());
 }
 
+TEST_CASE("Processing images only disables document analysis controls and audio-video metadata") {
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+    EnvVarGuard model_guard("LLAVA_MODEL_URL", std::string("https://example.com/llava-model.gguf"));
+    EnvVarGuard mmproj_guard("LLAVA_MMPROJ_URL", std::string("https://example.com/mmproj-model-f16.gguf"));
+
+    create_visual_llm_files();
+
+    Settings settings;
+    settings.set_analyze_images_by_content(true);
+    settings.set_process_images_only(false);
+    settings.set_analyze_documents_by_content(true);
+    settings.set_process_documents_only(false);
+    settings.set_add_audio_video_metadata_to_filename(true);
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+
+    QCheckBox* analyze_images = MainAppTestAccess::analyze_images_checkbox(window);
+    QCheckBox* process_images_only = MainAppTestAccess::process_images_only_checkbox(window);
+    QCheckBox* analyze_documents = MainAppTestAccess::analyze_documents_checkbox(window);
+    QCheckBox* process_documents_only = MainAppTestAccess::process_documents_only_checkbox(window);
+    QCheckBox* add_media_metadata =
+        MainAppTestAccess::add_audio_video_metadata_to_filename_checkbox(window);
+
+    REQUIRE(analyze_images != nullptr);
+    REQUIRE(process_images_only != nullptr);
+    REQUIRE(analyze_documents != nullptr);
+    REQUIRE(process_documents_only != nullptr);
+    REQUIRE(add_media_metadata != nullptr);
+
+    REQUIRE(analyze_images->isChecked());
+    REQUIRE(analyze_documents->isChecked());
+    REQUIRE(process_images_only->isEnabled());
+    REQUIRE(analyze_documents->isEnabled());
+    REQUIRE(process_documents_only->isEnabled());
+    REQUIRE(add_media_metadata->isEnabled());
+    REQUIRE(add_media_metadata->isChecked());
+
+    process_images_only->setChecked(true);
+
+    REQUIRE_FALSE(analyze_documents->isEnabled());
+    REQUIRE_FALSE(process_documents_only->isEnabled());
+    REQUIRE_FALSE(add_media_metadata->isEnabled());
+    REQUIRE(settings.get_analyze_documents_by_content());
+    REQUIRE(settings.get_add_audio_video_metadata_to_filename());
+
+    process_images_only->setChecked(false);
+
+    REQUIRE(analyze_documents->isEnabled());
+    REQUIRE(process_documents_only->isEnabled());
+    REQUIRE(add_media_metadata->isEnabled());
+}
+
+TEST_CASE("Processing images only preserves recursive scanning when scan subfolders is enabled") {
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+    EnvVarGuard model_guard("LLAVA_MODEL_URL", std::string("https://example.com/llava-model.gguf"));
+    EnvVarGuard mmproj_guard("LLAVA_MMPROJ_URL", std::string("https://example.com/mmproj-model-f16.gguf"));
+
+    create_visual_llm_files();
+
+    Settings settings;
+    settings.set_analyze_images_by_content(true);
+    settings.set_process_images_only(true);
+    settings.set_include_subdirectories(true);
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+
+    const FileScanOptions options = MainAppTestAccess::effective_scan_options(window);
+    REQUIRE(has_flag(options, FileScanOptions::Files));
+    REQUIRE(has_flag(options, FileScanOptions::Recursive));
+}
+
 TEST_CASE("Document rename-only does not disable categorization unless processing documents only") {
     EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
     QtAppContext qt_context;
