@@ -146,6 +146,12 @@ protected:
      * @param event Qt close event being processed.
      */
     void closeEvent(QCloseEvent* event) override;
+    /**
+     * @brief Handles custom window events such as high-priority analysis failures.
+     * @param event Event being dispatched to the window.
+     * @return True when the event was handled.
+     */
+    bool event(QEvent* event) override;
 
 private:
     void setup_file_explorer();
@@ -267,6 +273,11 @@ private:
     void run_on_ui_blocking(std::function<void()> func);
     void changeEvent(QEvent* event) override;
     FileScanOptions effective_scan_options() const;
+    /**
+     * @brief Posts an analysis failure to the UI thread with high priority.
+     * @param message Error text to show once the UI handles the failure.
+     */
+    void post_analysis_failure(std::string message);
     bool prompt_text_cpu_fallback(const std::string& reason);
     StorageSupportResolution resolve_storage_support(const StorageProviderDetection& detection) const;
 

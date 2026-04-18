@@ -100,6 +100,23 @@ using namespace std::chrono_literals;
 
 namespace {
 
+const QEvent::Type kAnalysisFailureEventType =
+    static_cast<QEvent::Type>(QEvent::registerEventType());
+
+class AnalysisFailureEvent final : public QEvent {
+public:
+    explicit AnalysisFailureEvent(std::string message)
+        : QEvent(kAnalysisFailureEventType),
+          message_(std::move(message))
+    {
+    }
+
+    const std::string& message() const { return message_; }
+
+private:
+    std::string message_;
+};
+
 std::string trim_ws_copy(const std::string& value) {
     const char* whitespace = " \t\n\r\f\v";
     const auto start = value.find_first_not_of(whitespace);
@@ -858,9 +875,7 @@ void MainApp::on_analyze_clicked()
             perform_analysis();
         } catch (const std::exception& ex) {
             core_logger->error("Exception during analysis: {}", ex.what());
-            run_on_ui([this, message = std::string("Analysis error: ") + ex.what()]() {
-                handle_analysis_failure(message);
-            });
+            post_analysis_failure(std::string("Analysis error: ") + ex.what());
         }
     });
 }
@@ -2189,12 +2204,31 @@ void MainApp::run_on_ui_blocking(std::function<void()> func)
         Qt::BlockingQueuedConnection);
 }
 
+void MainApp::post_analysis_failure(std::string message)
+{
+    QCoreApplication::postEvent(
+        this,
+        new AnalysisFailureEvent(std::move(message)),
+        Qt::HighEventPriority);
+}
+
 void MainApp::changeEvent(QEvent* event)
 {
     QMainWindow::changeEvent(event);
     if (event && event->type() == QEvent::LanguageChange) {
         retranslate_ui();
     }
+}
+
+bool MainApp::event(QEvent* event)
+{
+    if (event && event->type() == kAnalysisFailureEventType) {
+        const auto* failure_event = static_cast<const AnalysisFailureEvent*>(event);
+        handle_analysis_failure(failure_event->message());
+        return true;
+    }
+
+    return QMainWindow::event(event);
 }
 
 

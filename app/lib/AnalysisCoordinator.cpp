@@ -1810,9 +1810,7 @@ void AnalysisCoordinator::execute()
         if (cancelled) {
             app_.run_on_ui([app]() { app->handle_analysis_cancelled(); });
         } else {
-            app_.run_on_ui([app, message = std::string("Analysis error: ") + ex.what()]() {
-                app->handle_analysis_failure(message);
-            });
+            app_.post_analysis_failure(std::string("Analysis error: ") + ex.what());
         }
     }
 }
