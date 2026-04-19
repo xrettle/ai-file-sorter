@@ -5,6 +5,30 @@
 #include <string>
 #include <filesystem>
 #include <chrono>
+#include <fstream>
+
+namespace {
+
+bool is_active_log_filename(const std::filesystem::path& path)
+{
+    const std::string filename = path.filename().string();
+    return filename == "core.log" || filename == "db.log" || filename == "ui.log";
+}
+
+bool truncate_log_file(const std::filesystem::path& path, std::string* error)
+{
+    std::ofstream stream(path, std::ios::binary | std::ios::trunc);
+    if (stream) {
+        return true;
+    }
+
+    if (error) {
+        *error = "Failed to truncate log file '" + path.string() + "'.";
+    }
+    return false;
+}
+
+} // namespace
 
 
 std::string Logger::get_log_directory()
@@ -38,6 +62,76 @@ std::string Logger::get_windows_log_directory() {
         return std::string(appdata) + "\\" + APP_NAME_DIR + "\\logs";
     }
     throw std::runtime_error("Failed to determine APPDATA environment variable.");
+}
+
+bool Logger::clear_logs(std::string* error)
+{
+    std::error_code ec;
+    const std::filesystem::path log_dir = get_log_directory();
+    if (!std::filesystem::exists(log_dir, ec)) {
+        return true;
+    }
+
+    if (ec) {
+        if (error) {
+            *error = "Failed to inspect log directory '" + log_dir.string() + "'.";
+        }
+        return false;
+    }
+
+    for (const char* name : {"core_logger", "db_logger", "ui_logger"}) {
+        if (auto logger = get_logger(name)) {
+            logger->flush();
+        }
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(log_dir, ec)) {
+        if (ec) {
+            if (error) {
+                *error = "Failed to enumerate log directory '" + log_dir.string() + "'.";
+            }
+            return false;
+        }
+
+        const std::filesystem::path path = entry.path();
+        if (entry.is_directory(ec)) {
+            std::filesystem::remove_all(path, ec);
+            if (ec) {
+                if (error) {
+                    *error = "Failed to remove log directory '" + path.string() + "'.";
+                }
+                return false;
+            }
+            continue;
+        }
+
+        if (entry.is_regular_file(ec)) {
+            if (is_active_log_filename(path)) {
+                if (!truncate_log_file(path, error)) {
+                    return false;
+                }
+            } else {
+                std::filesystem::remove(path, ec);
+                if (ec) {
+                    if (error) {
+                        *error = "Failed to remove log file '" + path.string() + "'.";
+                    }
+                    return false;
+                }
+            }
+            continue;
+        }
+
+        std::filesystem::remove(path, ec);
+        if (ec) {
+            if (error) {
+                *error = "Failed to remove log entry '" + path.string() + "'.";
+            }
+            return false;
+        }
+    }
+
+    return true;
 }
 
 

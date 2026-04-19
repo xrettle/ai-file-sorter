@@ -200,6 +200,22 @@ TEST_CASE("Visual backend selection switches descriptor-driven download state") 
           QStringLiteral("Missing download URL environment variable (GEMMA3_4B_MODEL_URL)."));
 }
 
+TEST_CASE("Visual dialog defaults to recommended Gemma backend") {
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    LLMSelectionDialog dialog(settings);
+
+    CHECK(LLMSelectionDialogTestAccess::selected_visual_model_id(dialog) == "gemma-3-4b-it");
+    CHECK(LLMSelectionDialogTestAccess::selected_visual_model_label(dialog) ==
+          "Gemma 3 4B IT (Recommended)");
+}
+
 TEST_CASE("Visual dialog does not mark another backend's legacy generic mmproj as downloaded") {
     EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
     QtAppContext qt_context;
@@ -242,7 +258,7 @@ TEST_CASE("Visual dialog does not mark another backend's legacy generic mmproj a
     CHECK(gemma_mmproj_entry.status_label->text() == QStringLiteral("Download required."));
 }
 
-TEST_CASE("Visual dialog accepts the legacy default LLaVA generic mmproj without metadata") {
+TEST_CASE("Visual dialog accepts the legacy LLaVA generic mmproj without metadata") {
     EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
     QtAppContext qt_context;
 

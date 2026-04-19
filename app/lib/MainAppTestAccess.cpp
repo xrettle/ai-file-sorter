@@ -23,6 +23,16 @@ QString MainAppTestAccess::path_label_text(const MainApp& app) {
     return app.path_label ? app.path_label->text() : QString();
 }
 
+QAction* MainAppTestAccess::clear_cache_action(MainApp& app)
+{
+    return app.clear_cache_action;
+}
+
+QMenu* MainAppTestAccess::settings_menu(MainApp& app)
+{
+    return app.settings_menu;
+}
+
 QCheckBox* MainAppTestAccess::categorize_files_checkbox(MainApp& app) {
     return app.categorize_files_checkbox;
 }
@@ -146,6 +156,11 @@ void MainAppTestAccess::trigger_retranslate(MainApp& app) {
 
 void MainAppTestAccess::add_categorized_files(MainApp& app, int count) {
     app.record_categorized_metrics(count);
+}
+
+void MainAppTestAccess::set_analysis_in_progress(MainApp& app, bool analyzing)
+{
+    app.update_analyze_button_state(analyzing);
 }
 
 std::string MainAppTestAccess::resolve_storage_support_state_name(

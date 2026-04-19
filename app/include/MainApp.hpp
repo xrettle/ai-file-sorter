@@ -258,6 +258,14 @@ private:
     void refresh_backend_status_label();
     void schedule_backend_status_label_refresh();
     QString current_backend_status_text() const;
+    /**
+     * @brief Opens the Settings dialog for clearing cache and log data.
+     */
+    void show_cache_cleanup_dialog();
+    /**
+     * @brief Enables or disables Settings actions that should not run during analysis.
+     */
+    void update_settings_action_states();
 
     std::unique_ptr<ILLMClient> make_llm_client();
     void notify_recategorization_reset(const std::vector<CategorizedFile>& entries,
@@ -360,6 +368,7 @@ private:
     QAction* toggle_llm_action{nullptr};
     QAction* manage_storage_plugins_action{nullptr};
     QAction* manage_whitelists_action{nullptr};
+    QAction* clear_cache_action{nullptr};
     QAction* development_prompt_logging_action{nullptr};
     QAction* consistency_pass_action{nullptr};
     QActionGroup* language_group{nullptr};

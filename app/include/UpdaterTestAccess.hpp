@@ -24,6 +24,12 @@ public:
                                       const UpdateInfo& info,
                                       QWidget* parent,
                                       bool quit_after_open);
+    static void show_required_update_dialog(Updater& updater,
+                                            const UpdateInfo& info,
+                                            QWidget* parent);
+    static void show_optional_update_dialog(Updater& updater,
+                                            const UpdateInfo& info,
+                                            QWidget* parent);
     static bool handle_update_error(Updater& updater,
                                     const UpdateInfo& info,
                                     const QString& message,

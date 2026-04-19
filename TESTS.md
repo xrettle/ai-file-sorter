@@ -156,14 +156,69 @@ Procedure: Run `split_entries_for_analysis()` in two sections: (a) normal catego
 Expected outcome: In normal mode, the already-renamed image is routed to filename-based categorization ("other" bucket). In rename-only mode, the already-renamed image is excluded entirely.
 Run: `./build-tests/ai_file_sorter_tests "Already-renamed images skip vision analysis"`
 
+### `tests/unit/test_main_app_cache_action.cpp` (non-Windows only)
+
+#### Test case: Settings clear cache action stays last and follows analysis state
+Purpose: Ensure the new Settings menu entry remains the bottom-most action and is disabled while analysis is active.
+Setup: Build `MainApp` with offscreen Qt using a temporary config directory.
+Procedure: Read the Settings menu action order, then toggle the analysis-in-progress state through the test access layer.
+Expected outcome: The `Clear cache…` action is the last Settings entry, starts enabled, becomes disabled during analysis, and re-enables afterward.
+Run: `./build-tests/ai_file_sorter_tests "Settings clear cache action stays last and follows analysis state"`
+
 ### `tests/unit/test_ui_translator.cpp` (non-Windows only)
 
 #### Test case: UiTranslator updates menus, actions, and controls
 Purpose: Validate that the UI translator updates all primary controls, menus, and stateful labels in a consistent pass.
 Setup: Build a test harness with a `QMainWindow`, many UI controls, and a translator state set to French in settings. Use a translation function that returns the input string to test label wiring rather than actual translation files.
 Procedure: Call `retranslate_all()` and verify the text of buttons, checkboxes, menus, status labels, and the file explorer dock title. Also verify the language action group selection.
-Expected outcome: All UI elements show the expected English strings and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
+Expected outcome: All UI elements show the expected English strings, including the new `Clear cache…` Settings action, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
 Run: `./build-tests/ai_file_sorter_tests "*UiTranslator updates menus*"`
+
+### `tests/unit/test_cache_maintenance_service.cpp`
+
+#### Test case: CacheMaintenanceService reports cache paths and sizes
+Purpose: Verify the cache-maintenance service resolves the expected categorization, image-location, and log paths and estimates their reclaimable size.
+Setup: Create temporary cache files and a temporary log directory, including a rotated log file and a custom categorization-cache filename override.
+Procedure: Query each cache target through `target_info()`.
+Expected outcome: Each target reports the expected path, existence state, and byte count.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceService reports cache paths and sizes"`
+
+#### Test case: CacheMaintenanceService clears configured cache targets
+Purpose: Ensure the default cleanup behavior removes file-backed caches and clears directory-backed log caches.
+Setup: Create temporary categorization and image-location cache files plus current, rotated, and nested log files.
+Procedure: Call `clear()` for each cache target in turn.
+Expected outcome: The cache files are deleted, current log files are truncated, and rotated or nested log entries are removed.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceService clears configured cache targets"`
+
+#### Test case: CacheMaintenanceService uses specialized clear callbacks when provided
+Purpose: Confirm app-aware clear callbacks are honored for targets that should not be treated as raw filesystem deletes.
+Setup: Construct the service with callback lambdas for the categorization and log targets.
+Procedure: Clear those targets and observe the callback flags.
+Expected outcome: The callbacks are invoked and the operations report success.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceService uses specialized clear callbacks when provided"`
+
+#### Test case: CacheMaintenanceService reports zero size for an empty categorization database
+Purpose: Prevent the categorization cache UI from showing the baseline SQLite schema size after the cache has already been cleared.
+Setup: Create a real empty `file_categorization` SQLite database on disk and vacuum it so the file still has a non-zero on-disk size.
+Procedure: Query the categorization target through `target_info()`.
+Expected outcome: The target still exists on disk, but the reported reclaimable size is `0`, reflecting that no cached categorization rows remain.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceService reports zero size for an empty categorization database"`
+
+### `tests/unit/test_cache_maintenance_dialog.cpp` (non-Windows only)
+
+#### Test case: CacheMaintenanceDialog exposes tooltips for each cache target
+Purpose: Verify the dialog explains what each cache category means through button tooltips.
+Setup: Build the dialog with offscreen Qt and a temporary cache/log location setup.
+Procedure: Find each clear button by object name and inspect its tooltip text.
+Expected outcome: The categorization, image-location, and log actions all expose a brief explanatory tooltip and remain enabled when the dialog is not busy.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceDialog exposes tooltips for each cache target"`
+
+#### Test case: CacheMaintenanceDialog disables cache clearing controls while busy
+Purpose: Ensure the dialog respects the disabled state requested while analysis is running.
+Setup: Build the dialog with the busy flag set to true.
+Procedure: Inspect the three clear buttons and the busy-state label.
+Expected outcome: All clear buttons are disabled and the dialog shows the busy explanation text.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceDialog disables cache clearing controls while busy"`
 
 ### `tests/unit/test_utils.cpp`
 
@@ -227,10 +282,17 @@ Run: `./build-tests/ai_file_sorter_tests "Visual model entry reports download er
 
 #### Test case: Visual backend selection switches descriptor-driven download state
 Purpose: Verify the visual download UI is driven by the selected backend descriptor rather than hardcoded LLaVA rows.
-Setup: Clear both the default LLaVA env vars and the alternate Gemma env vars, initialize settings with the default visual backend, and construct the dialog.
+Setup: Clear both the default Gemma env vars and the alternate LLaVA env vars, initialize settings with the legacy LLaVA backend, and construct the dialog.
 Procedure: Confirm the default backend id and missing-env state, switch the dialog to the Gemma backend through the test access layer, and inspect the active model entry again.
 Expected outcome: The selected backend id changes to `gemma-3-4b-it`, and the visible model entry now reports the missing `GEMMA3_4B_MODEL_URL` variable instead of the default backend env var.
 Run: `./build-tests/ai_file_sorter_tests "Visual backend selection switches descriptor-driven download state"`
+
+#### Test case: Visual dialog defaults to recommended Gemma backend
+Purpose: Verify the visual-model combo defaults to Gemma and marks it as recommended in the download dialog.
+Setup: Construct the dialog with default settings on a clean config directory.
+Procedure: Read the selected visual backend id and the current combo-box label through the test access layer.
+Expected outcome: The selected backend id is `gemma-3-4b-it`, and the visible combo label is `Gemma 3 4B IT (Recommended)`.
+Run: `./build-tests/ai_file_sorter_tests "Visual dialog defaults to recommended Gemma backend"`
 
 ### `tests/unit/test_visual_llm_runtime.cpp`
 
@@ -238,7 +300,7 @@ Run: `./build-tests/ai_file_sorter_tests "Visual backend selection switches desc
 Purpose: Verify the built-in visual model catalog exposes the expected default backend descriptor and the alternate backend entries used by the selector UI.
 Setup: Load the default visual model descriptor from the catalog.
 Procedure: Inspect the backend id, display name, architecture, prompt policy, required artifact env vars, and the presence of the alternate Vicuna and Gemma backend descriptors.
-Expected outcome: The default backend resolves to the LLaVA descriptor with separate model and mmproj artifact entries and the legacy prompt policy, while the catalog also exposes both `llava-v1.6-vicuna-7b` and `gemma-3-4b-it`, with Gemma using the structured multimodal prompt policy.
+Expected outcome: The default backend resolves to the Gemma descriptor with separate model and mmproj artifact entries and the structured multimodal prompt policy, while the catalog also exposes both `llava-v1.6-mistral-7b` and `llava-v1.6-vicuna-7b` as alternate entries.
 Run: `./build-tests/ai_file_sorter_tests "Default visual model descriptor exposes the MTMD backend catalog"`
 
 #### Test case: VisualLlmRuntime resolves the active backend through descriptor artifacts
@@ -377,6 +439,13 @@ Procedure: Parse the feed for a platform.
 Expected outcome: The legacy fields are still accepted and returned as update info.
 Run: `./build-tests/ai_file_sorter_tests "UpdateFeed falls back to the legacy single-stream schema"`
 
+#### Test case: UpdateFeed normalizes changelog items from text feeds
+Purpose: Verify the feed parser accepts a single `changelog` text block and converts bullet-prefixed lines into clean list items.
+Setup: Build a legacy single-stream feed whose `changelog` is a multi-line string using `-`, `*`, and `•`.
+Procedure: Parse the feed for Linux.
+Expected outcome: The changelog is normalized into clean items without the original bullet prefixes.
+Run: `./build-tests/ai_file_sorter_tests "UpdateFeed normalizes changelog items from text feeds"`
+
 #### Test case: UpdateInstaller downloads, verifies, and reuses a cached installer
 Purpose: Validate the Windows-style installer preparation flow without network access.
 Setup: Inject a fake installer download callback and a fake launch callback.
@@ -427,6 +496,20 @@ Expected outcome: Windows builds report support; other platforms do not.
 Run: `./build-tests/ai_file_sorter_tests "UpdateInstaller auto-install support remains Windows-only"`
 
 ### `tests/unit/test_updater.cpp`
+
+#### Test case: Updater optional dialog shows changelog items from the update feed
+Purpose: Confirm optional updates display the per-stream changelog list in the dialog before the user makes a choice.
+Setup: Construct an updater, attach multiple changelog items to the update info, and auto-click `Cancel`.
+Procedure: Open the optional update dialog through updater test access and capture the dialog text.
+Expected outcome: The dialog shows the usual prompt plus a bullet list headed by `What's new in version ...`.
+Run: `./build-tests/ai_file_sorter_tests "Updater optional dialog shows changelog items from the update feed"`
+
+#### Test case: Updater required dialog shows changelog items before forcing quit
+Purpose: Ensure required updates show the same changelog context before the user is forced to update or quit.
+Setup: Construct an updater with a fake quit handler, attach changelog items to the update info, and auto-click `Quit`.
+Procedure: Open the required update dialog through updater test access and capture the informative text.
+Expected outcome: The dialog includes the bullet list for the version and still triggers the quit handler when `Quit` is selected.
+Run: `./build-tests/ai_file_sorter_tests "Updater required dialog shows changelog items before forcing quit"`
 
 #### Test case: Updater error dialog offers manual update fallback without quitting when not requested
 Purpose: Verify installer-preparation failures still let the user open the normal download page manually for optional updates.

@@ -1646,6 +1646,11 @@ Als u afsluiten kiest, wordt de toepassing gesloten.</translation>
             <translation>Er is een optionele update beschikbaar. Wilt u nu bijwerken?</translation>
         </message>
         <message>
+            <location filename="../../lib/Updater.cpp" line="132" />
+            <source>What's new in version %1:</source>
+            <translation>Nieuw in versie %1:</translation>
+        </message>
+        <message>
             <location filename="../../lib/Updater.cpp" line="210" />
             <source>Skip This Version</source>
             <translation>Deze versie overslaan</translation>
@@ -1784,6 +1789,10 @@ Geprobeerd:
 %1</source>
             <translation>Kon het hoofdprogramma niet starten:
 %1</translation>
+        </message>
+        <message>
+            <source>Failed to clear the categorization cache.</source>
+            <translation>Kan de categorisatiecache niet wissen.</translation>
         </message>
     </context>
     <context>
@@ -2112,6 +2121,95 @@ Geprobeerd:
             <location filename="../../lib/WhitelistManagerDialog.cpp" line="170" />
             <source>The default list cannot be removed.</source>
             <translation>De standaardlijst kan niet worden verwijderd.</translation>
+        </message>
+        <message>
+            <source>Clear cache…</source>
+            <translation>Cache wissen…</translation>
+        </message>
+    </context>
+    <context>
+        <name>CacheMaintenanceDialog</name>
+        <message>
+            <source>Clear cache</source>
+            <translation>Cache wissen</translation>
+        </message>
+        <message>
+            <source>Remove cached categorization results, image place lookups, or log files. Downloaded models are managed separately in the LLM dialog.</source>
+            <translation>Verwijdert gecachte categorisatieresultaten, afbeeldingslocaties en logbestanden. Gedownloade modellen worden apart beheerd in het LLM-dialoogvenster.</translation>
+        </message>
+        <message>
+            <source>Cache cleanup is unavailable while analysis is running.</source>
+            <translation>Cache opschonen is niet beschikbaar terwijl de analyse wordt uitgevoerd.</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>Geen</translation>
+        </message>
+        <message>
+            <source>Path:</source>
+            <translation>Pad:</translation>
+        </message>
+        <message>
+            <source>Estimated size:</source>
+            <translation>Geschatte grootte:</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Wissen</translation>
+        </message>
+        <message>
+            <source>This cache is already empty.</source>
+            <translation>Deze cache is al leeg.</translation>
+        </message>
+        <message>
+            <source>Confirm cache clear</source>
+            <translation>Wissen van cache bevestigen</translation>
+        </message>
+        <message>
+            <source>Clear %1?</source>
+            <translation>%1 wissen?</translation>
+        </message>
+        <message>
+            <source>Path: %1
+Estimated reclaimed space: %2
+
+This cannot be undone.</source>
+            <translation>Pad: %1
+Geschatte vrij te maken ruimte: %2
+
+Dit kan niet ongedaan worden gemaakt.</translation>
+        </message>
+        <message>
+            <source>The selected cache could not be removed.</source>
+            <translation>De geselecteerde cache kon niet worden verwijderd.</translation>
+        </message>
+        <message>
+            <source>Cleared %1.</source>
+            <translation>%1 is gewist.</translation>
+        </message>
+        <message>
+            <source>Categorization cache</source>
+            <translation>Categorisatiecache</translation>
+        </message>
+        <message>
+            <source>Image location cache</source>
+            <translation>Cache voor afbeeldingslocaties</translation>
+        </message>
+        <message>
+            <source>Logs</source>
+            <translation>Logboeken</translation>
+        </message>
+        <message>
+            <source>Stores past file and folder categorization results so repeated runs can reuse them.</source>
+            <translation>Slaat eerdere categorisatieresultaten van bestanden en mappen op zodat volgende runs die opnieuw kunnen gebruiken.</translation>
+        </message>
+        <message>
+            <source>Stores reverse-geocoded place names for photo GPS coordinates so the app does not look them up again.</source>
+            <translation>Slaat via reverse geocoding gevonden plaatsnamen voor GPS-coördinaten van foto&apos;s op zodat de app die niet opnieuw hoeft op te zoeken.</translation>
+        </message>
+        <message>
+            <source>Stores application log files used for troubleshooting and error reporting.</source>
+            <translation>Slaat logbestanden van de applicatie op voor probleemoplossing en foutrapportage.</translation>
         </message>
     </context>
     <context>

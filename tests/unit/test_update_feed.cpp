@@ -62,6 +62,10 @@ TEST_CASE("UpdateFeed selects the correct platform stream") {
                     "current_version": "1.8.0",
                     "min_version": "1.7.0",
                     "download_url": "https://filesorter.app/windows",
+                    "changelog": [
+                        "Improved installer reliability",
+                        "Added clearer update prompts"
+                    ],
                     "installer_url": "https://filesorter.app/aifs-1.8.0.exe",
                     "installer_sha256": "ABCDEF"
                 },
@@ -81,11 +85,16 @@ TEST_CASE("UpdateFeed selects the correct platform stream") {
 
     const auto windows = UpdateFeed::parse_for_platform(json, UpdateFeed::Platform::Windows);
     REQUIRE(windows.has_value());
+    const std::vector<std::string> expected_windows_changelog = {
+        "Improved installer reliability",
+        "Added clearer update prompts"
+    };
     CHECK(windows->current_version == "1.8.0");
     CHECK(windows->min_version == "1.7.0");
     CHECK(windows->download_url == "https://filesorter.app/windows");
     CHECK(windows->installer_url == "https://filesorter.app/aifs-1.8.0.exe");
     CHECK(windows->installer_sha256 == "abcdef");
+    CHECK(windows->changelog_items == expected_windows_changelog);
 
     const auto macos = UpdateFeed::parse_for_platform(json, UpdateFeed::Platform::MacOS);
     REQUIRE(macos.has_value());
@@ -115,6 +124,28 @@ TEST_CASE("UpdateFeed falls back to the legacy single-stream schema") {
     CHECK(info->current_version == "1.7.1");
     CHECK(info->min_version == "1.6.0");
     CHECK(info->download_url == "https://filesorter.app/download");
+}
+
+TEST_CASE("UpdateFeed normalizes changelog items from text feeds") {
+    const std::string json = R"json(
+        {
+            "update": {
+                "current_version": "1.7.2",
+                "min_version": "1.6.0",
+                "download_url": "https://filesorter.app/download",
+                "changelog": "- Fixed Linux updater selection\n\u2022 Added cache maintenance tools\n\n* Improved model defaults"
+            }
+        }
+    )json";
+
+    const auto info = UpdateFeed::parse_for_platform(json, UpdateFeed::Platform::Linux);
+    REQUIRE(info.has_value());
+    const std::vector<std::string> expected_changelog = {
+        "Fixed Linux updater selection",
+        "Added cache maintenance tools",
+        "Improved model defaults"
+    };
+    CHECK(info->changelog_items == expected_changelog);
 }
 
 TEST_CASE("UpdateInstaller downloads, verifies, and reuses a cached installer") {

@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 struct UpdateInfo
 {
@@ -11,6 +12,7 @@ struct UpdateInfo
     std::string release_notes_url;
     std::string installer_url;
     std::string installer_sha256;
+    std::vector<std::string> changelog_items;
 
     bool has_download_target() const
     {
@@ -20,6 +22,11 @@ struct UpdateInfo
     bool has_direct_installer() const
     {
         return !installer_url.empty();
+    }
+
+    bool has_changelog() const
+    {
+        return !changelog_items.empty();
     }
 };
 

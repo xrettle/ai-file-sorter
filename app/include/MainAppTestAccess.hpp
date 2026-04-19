@@ -19,6 +19,8 @@
 
 class MainApp;
 class Settings;
+class QAction;
+class QMenu;
 struct StorageProviderDetection;
 
 /**
@@ -48,6 +50,18 @@ public:
      * @return Current path label text.
      */
     static QString path_label_text(const MainApp& app);
+    /**
+     * @brief Access the Settings -> Clear cache action.
+     * @param app MainApp instance.
+     * @return Pointer to the action, or nullptr if unavailable.
+     */
+    static QAction* clear_cache_action(MainApp& app);
+    /**
+     * @brief Access the Settings menu.
+     * @param app MainApp instance.
+     * @return Pointer to the Settings menu, or nullptr if unavailable.
+     */
+    static QMenu* settings_menu(MainApp& app);
     /**
      * @brief Access the \"Categorize files\" checkbox.
      * @param app MainApp instance.
@@ -224,6 +238,12 @@ public:
      * @param count Number of files to add.
      */
     static void add_categorized_files(MainApp& app, int count);
+    /**
+     * @brief Force the analysis-in-progress UI state for action enablement tests.
+     * @param app MainApp instance.
+     * @param analyzing True to simulate an active analysis.
+     */
+    static void set_analysis_in_progress(MainApp& app, bool analyzing);
     /**
      * @brief Resolve the storage-support state for a detected provider.
      * @param app MainApp instance.

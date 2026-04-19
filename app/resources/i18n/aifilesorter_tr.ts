@@ -1646,6 +1646,11 @@ If you choose to quit, the application will close.</source>
             <translation>İsteğe bağlı bir güncelleme mevcut. Şimdi güncellemek ister misiniz?</translation>
         </message>
         <message>
+            <location filename="../../lib/Updater.cpp" line="132" />
+            <source>What's new in version %1:</source>
+            <translation>%1 sürümündeki yenilikler:</translation>
+        </message>
+        <message>
             <location filename="../../lib/Updater.cpp" line="210" />
             <source>Skip This Version</source>
             <translation>Bu sürümü atla</translation>
@@ -1784,6 +1789,10 @@ Denenen yollar:
 %1</source>
             <translation>Ana uygulama yürütülebilir dosyası başlatılamadı:
 %1</translation>
+        </message>
+        <message>
+            <source>Failed to clear the categorization cache.</source>
+            <translation>Kategorilendirme önbelleği temizlenemedi.</translation>
         </message>
     </context>
     <context>
@@ -2112,6 +2121,95 @@ Denenen yollar:
             <location filename="../../lib/WhitelistManagerDialog.cpp" line="170" />
             <source>The default list cannot be removed.</source>
             <translation>Varsayılan liste kaldırılamaz.</translation>
+        </message>
+        <message>
+            <source>Clear cache…</source>
+            <translation>Önbelleği temizle…</translation>
+        </message>
+    </context>
+    <context>
+        <name>CacheMaintenanceDialog</name>
+        <message>
+            <source>Clear cache</source>
+            <translation>Önbelleği temizle</translation>
+        </message>
+        <message>
+            <source>Remove cached categorization results, image place lookups, or log files. Downloaded models are managed separately in the LLM dialog.</source>
+            <translation>Önbelleğe alınmış kategorizasyon sonuçlarını, görüntü konumu kayıtlarını ve günlük dosyalarını kaldırır. İndirilen modeller LLM iletişim kutusunda ayrı olarak yönetilir.</translation>
+        </message>
+        <message>
+            <source>Cache cleanup is unavailable while analysis is running.</source>
+            <translation>Analiz çalışırken önbellek temizleme kullanılamaz.</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>Yok</translation>
+        </message>
+        <message>
+            <source>Path:</source>
+            <translation>Yol:</translation>
+        </message>
+        <message>
+            <source>Estimated size:</source>
+            <translation>Tahmini boyut:</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Temizle</translation>
+        </message>
+        <message>
+            <source>This cache is already empty.</source>
+            <translation>Bu önbellek zaten boş.</translation>
+        </message>
+        <message>
+            <source>Confirm cache clear</source>
+            <translation>Önbellek temizlemeyi onayla</translation>
+        </message>
+        <message>
+            <source>Clear %1?</source>
+            <translation>%1 temizlensin mi?</translation>
+        </message>
+        <message>
+            <source>Path: %1
+Estimated reclaimed space: %2
+
+This cannot be undone.</source>
+            <translation>Yol: %1
+Tahmini kazanılacak alan: %2
+
+Bu işlem geri alınamaz.</translation>
+        </message>
+        <message>
+            <source>The selected cache could not be removed.</source>
+            <translation>Seçilen önbellek kaldırılamadı.</translation>
+        </message>
+        <message>
+            <source>Cleared %1.</source>
+            <translation>%1 temizlendi.</translation>
+        </message>
+        <message>
+            <source>Categorization cache</source>
+            <translation>Kategorilendirme önbelleği</translation>
+        </message>
+        <message>
+            <source>Image location cache</source>
+            <translation>Görüntü konumu önbelleği</translation>
+        </message>
+        <message>
+            <source>Logs</source>
+            <translation>Günlükler</translation>
+        </message>
+        <message>
+            <source>Stores past file and folder categorization results so repeated runs can reuse them.</source>
+            <translation>Önceki dosya ve klasör kategorizasyon sonuçlarını saklar; böylece sonraki çalıştırmalar bunları yeniden kullanabilir.</translation>
+        </message>
+        <message>
+            <source>Stores reverse-geocoded place names for photo GPS coordinates so the app does not look them up again.</source>
+            <translation>Fotoğraf GPS koordinatları için ters coğrafi kodlama ile bulunan yer adlarını saklar; böylece uygulama bunları yeniden sorgulamaz.</translation>
+        </message>
+        <message>
+            <source>Stores application log files used for troubleshooting and error reporting.</source>
+            <translation>Sorun giderme ve hata raporlama için kullanılan uygulama günlük dosyalarını saklar.</translation>
         </message>
     </context>
     <context>

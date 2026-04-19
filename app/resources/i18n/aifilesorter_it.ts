@@ -1646,6 +1646,11 @@ Se scegli di uscire, l'applicazione si chiuderà.</translation>
             <translation>È disponibile un aggiornamento opzionale. Vuoi aggiornare ora?</translation>
         </message>
         <message>
+            <location filename="../../lib/Updater.cpp" line="132" />
+            <source>What's new in version %1:</source>
+            <translation>Novità della versione %1:</translation>
+        </message>
+        <message>
             <location filename="../../lib/Updater.cpp" line="210" />
             <source>Skip This Version</source>
             <translation>Salta questa versione</translation>
@@ -1784,6 +1789,10 @@ Percorsi provati:
 %1</source>
             <translation>Impossibile avviare l'eseguibile principale dell'applicazione:
 %1</translation>
+        </message>
+        <message>
+            <source>Failed to clear the categorization cache.</source>
+            <translation>Impossibile svuotare la cache di categorizzazione.</translation>
         </message>
     </context>
     <context>
@@ -2112,6 +2121,95 @@ Percorsi provati:
             <location filename="../../lib/WhitelistManagerDialog.cpp" line="170" />
             <source>The default list cannot be removed.</source>
             <translation>L'elenco predefinito non può essere rimosso.</translation>
+        </message>
+        <message>
+            <source>Clear cache…</source>
+            <translation>Svuota cache…</translation>
+        </message>
+    </context>
+    <context>
+        <name>CacheMaintenanceDialog</name>
+        <message>
+            <source>Clear cache</source>
+            <translation>Svuota cache</translation>
+        </message>
+        <message>
+            <source>Remove cached categorization results, image place lookups, or log files. Downloaded models are managed separately in the LLM dialog.</source>
+            <translation>Rimuove i risultati di categorizzazione memorizzati nella cache, le posizioni delle immagini e i file di log. I modelli scaricati sono gestiti separatamente nella finestra di dialogo LLM.</translation>
+        </message>
+        <message>
+            <source>Cache cleanup is unavailable while analysis is running.</source>
+            <translation>La pulizia della cache non è disponibile durante l&apos;analisi.</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>Nessuno</translation>
+        </message>
+        <message>
+            <source>Path:</source>
+            <translation>Percorso:</translation>
+        </message>
+        <message>
+            <source>Estimated size:</source>
+            <translation>Dimensione stimata:</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Svuota</translation>
+        </message>
+        <message>
+            <source>This cache is already empty.</source>
+            <translation>Questa cache è già vuota.</translation>
+        </message>
+        <message>
+            <source>Confirm cache clear</source>
+            <translation>Conferma svuotamento cache</translation>
+        </message>
+        <message>
+            <source>Clear %1?</source>
+            <translation>Svuotare %1?</translation>
+        </message>
+        <message>
+            <source>Path: %1
+Estimated reclaimed space: %2
+
+This cannot be undone.</source>
+            <translation>Percorso: %1
+Spazio recuperato stimato: %2
+
+Questa operazione non può essere annullata.</translation>
+        </message>
+        <message>
+            <source>The selected cache could not be removed.</source>
+            <translation>Impossibile rimuovere la cache selezionata.</translation>
+        </message>
+        <message>
+            <source>Cleared %1.</source>
+            <translation>%1 è stata svuotata.</translation>
+        </message>
+        <message>
+            <source>Categorization cache</source>
+            <translation>Cache di categorizzazione</translation>
+        </message>
+        <message>
+            <source>Image location cache</source>
+            <translation>Cache delle posizioni immagini</translation>
+        </message>
+        <message>
+            <source>Logs</source>
+            <translation>Log</translation>
+        </message>
+        <message>
+            <source>Stores past file and folder categorization results so repeated runs can reuse them.</source>
+            <translation>Memorizza i risultati precedenti di categorizzazione di file e cartelle in modo che le esecuzioni successive possano riutilizzarli.</translation>
+        </message>
+        <message>
+            <source>Stores reverse-geocoded place names for photo GPS coordinates so the app does not look them up again.</source>
+            <translation>Memorizza i nomi dei luoghi ricavati con geocodifica inversa dalle coordinate GPS delle foto in modo che l&apos;app non debba cercarli di nuovo.</translation>
+        </message>
+        <message>
+            <source>Stores application log files used for troubleshooting and error reporting.</source>
+            <translation>Memorizza i file di log dell&apos;applicazione usati per la risoluzione dei problemi e la segnalazione degli errori.</translation>
         </message>
     </context>
     <context>

@@ -7,6 +7,8 @@
 
 namespace {
 
+constexpr std::string_view kLegacyDefaultLlavaBackendId = "llava-v1.6-mistral-7b";
+
 std::optional<std::string> read_cached_download_url(const std::filesystem::path& candidate)
 {
     std::ifstream in(candidate.string() + ".aifs.meta");
@@ -40,7 +42,7 @@ bool is_default_llava_mmproj_without_metadata_compatible(
         return false;
     }
 
-    return std::string_view(backend.id) == std::string_view(default_visual_model_descriptor().id);
+    return std::string_view(backend.id) == kLegacyDefaultLlavaBackendId;
 }
 
 bool accept_legacy_candidate(const VisualModelDescriptor& backend,
@@ -156,6 +158,10 @@ const VisualModelDescriptor* find_visual_model_descriptor(std::string_view id)
 
 const VisualModelDescriptor& default_visual_model_descriptor()
 {
+    const auto* gemma = find_visual_model_descriptor("gemma-3-4b-it");
+    if (gemma) {
+        return *gemma;
+    }
     return visual_model_descriptors().front();
 }
 

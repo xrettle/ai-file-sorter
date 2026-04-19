@@ -77,6 +77,11 @@ public:
         get_recent_categories_for_extension(const std::string& extension,
                                             FileType file_type,
                                             std::size_t limit) const;
+    /**
+     * @brief Clears all cached file and directory categorization rows.
+     * @return True when the cache rows were removed successfully.
+     */
+    bool clear_all_categorizations();
     bool clear_directory_categorizations(const std::string& dir_path,
                                          bool recursive = false);
     bool has_categorization_style_conflict(const std::string& dir_path,

@@ -3,6 +3,8 @@
 #include "AppInfo.hpp"
 
 #include "CategorizationSession.hpp"
+#include "CacheMaintenanceDialog.hpp"
+#include "CacheMaintenanceService.hpp"
 #include "DialogUtils.hpp"
 #include "ErrorMessages.hpp"
 #include "LLMClient.hpp"
@@ -436,6 +438,7 @@ MainApp::MainApp(Settings& settings, bool development_mode, QWidget* parent)
     statusBar()->addPermanentWidget(backend_status_label);
     ui_translator_ = std::make_unique<UiTranslator>(ui_builder.build_translator_dependencies(*this));
     retranslate_ui();
+    update_settings_action_states();
     setup_file_explorer();
     connect_signals();
     connect_edit_actions();
@@ -744,6 +747,13 @@ void MainApp::retranslate_ui()
     };
     ui_translator_->retranslate_all(state);
     refresh_backend_status_label();
+}
+
+void MainApp::update_settings_action_states()
+{
+    if (clear_cache_action) {
+        clear_cache_action->setEnabled(!analysis_in_progress_);
+    }
 }
 
 QString MainApp::current_backend_status_text() const
@@ -1062,6 +1072,7 @@ void MainApp::update_analyze_button_state(bool analyzing)
         statusBar()->showMessage(tr("Ready"));
         status_is_ready_ = true;
     }
+    update_settings_action_states();
 }
 
 void MainApp::update_results_view_mode()
@@ -1938,6 +1949,26 @@ void MainApp::show_llm_selection_dialog()
     } catch (const std::exception& ex) {
         show_error_dialog(fmt::format("LLM selection error: {}", ex.what()));
     }
+}
+
+void MainApp::show_cache_cleanup_dialog()
+{
+    CacheMaintenanceService service(
+        settings.get_config_dir(),
+        CacheMaintenanceService::Callbacks{
+            .clear_categorization_cache = [this](std::string& error) {
+                if (!db_manager.clear_all_categorizations()) {
+                    error = tr("Failed to clear the categorization cache.").toStdString();
+                    return false;
+                }
+                return true;
+            },
+            .clear_logs = [](std::string& error) {
+                return Logger::clear_logs(&error);
+            }});
+
+    CacheMaintenanceDialog dialog(service, analysis_in_progress_, this);
+    dialog.exec();
 }
 
 void MainApp::show_suitability_benchmark_dialog(bool /*auto_start*/)

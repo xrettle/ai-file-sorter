@@ -25,16 +25,16 @@ TEST_CASE("Default visual model descriptor exposes the MTMD backend catalog") {
 
     const auto& descriptor = default_visual_model_descriptor();
 
-    CHECK(std::string(descriptor.id) == "llava-v1.6-mistral-7b");
-    CHECK(std::string(descriptor.display_name) == "LLaVA 1.6 Mistral 7B");
+    CHECK(std::string(descriptor.id) == "gemma-3-4b-it");
+    CHECK(std::string(descriptor.display_name) == "Gemma 3 4B IT");
     CHECK(descriptor.architecture == VisualModelArchitecture::MtmdProjector);
-    CHECK(descriptor.prompt_policy == VisualPromptPolicy::LegacyLlava);
+    CHECK(descriptor.prompt_policy == VisualPromptPolicy::StructuredVisionInstruct);
     REQUIRE(descriptor.artifacts.size() == 2);
     CHECK(descriptor.artifacts[0].kind == VisualModelArtifactKind::Model);
-    CHECK(std::string(descriptor.artifacts[0].url_env) == "LLAVA_MODEL_URL");
+    CHECK(std::string(descriptor.artifacts[0].url_env) == "GEMMA3_4B_MODEL_URL");
     CHECK(std::string(descriptor.artifacts[0].local_storage_name) == "model.gguf");
     CHECK(descriptor.artifacts[1].kind == VisualModelArtifactKind::Mmproj);
-    CHECK(std::string(descriptor.artifacts[1].url_env) == "LLAVA_MMPROJ_URL");
+    CHECK(std::string(descriptor.artifacts[1].url_env) == "GEMMA3_4B_MMPROJ_URL");
     CHECK(std::string(descriptor.artifacts[1].local_storage_name) == "mmproj.gguf");
 
     const auto* vicuna = find_visual_model_descriptor("llava-v1.6-vicuna-7b");
@@ -57,10 +57,10 @@ TEST_CASE("Default visual model descriptor exposes the MTMD backend catalog") {
 TEST_CASE("VisualLlmRuntime resolves the active backend through descriptor artifacts") {
     TempDir home_dir;
     EnvVarGuard home_guard("HOME", home_dir.path().string());
-    const std::string model_url = "https://example.com/llava-model.gguf";
-    const std::string mmproj_url = "https://example.com/llava-mmproj.gguf";
-    EnvVarGuard model_guard("LLAVA_MODEL_URL", model_url);
-    EnvVarGuard mmproj_guard("LLAVA_MMPROJ_URL", mmproj_url);
+    const std::string model_url = "https://example.com/gemma-3-4b-it-Q4_K_M.gguf";
+    const std::string mmproj_url = "https://example.com/mmproj-gemma-3-4b-it-Q4_K_M.gguf";
+    EnvVarGuard model_guard("GEMMA3_4B_MODEL_URL", model_url);
+    EnvVarGuard mmproj_guard("GEMMA3_4B_MMPROJ_URL", mmproj_url);
 
     const auto& descriptor = default_visual_model_descriptor();
     const auto model_path = visual_artifact_storage_path(descriptor, descriptor.artifacts[0]);
@@ -74,7 +74,7 @@ TEST_CASE("VisualLlmRuntime resolves the active backend through descriptor artif
     REQUIRE(backend.has_value());
     CHECK(error.empty());
     REQUIRE(backend->descriptor != nullptr);
-    CHECK(std::string(backend->descriptor->id) == "llava-v1.6-mistral-7b");
+    CHECK(std::string(backend->descriptor->id) == "gemma-3-4b-it");
     REQUIRE(backend->artifacts.size() == 2);
     REQUIRE(backend->path_for(VisualModelArtifactKind::Model).has_value());
     REQUIRE(backend->path_for(VisualModelArtifactKind::Mmproj).has_value());
@@ -90,12 +90,12 @@ TEST_CASE("VisualLlmRuntime resolves the active backend through descriptor artif
 TEST_CASE("VisualLlmRuntime reports missing backend URLs before resolving artifacts") {
     TempDir home_dir;
     EnvVarGuard home_guard("HOME", home_dir.path().string());
-    EnvVarGuard model_guard("LLAVA_MODEL_URL", std::nullopt);
-    EnvVarGuard mmproj_guard("LLAVA_MMPROJ_URL", std::nullopt);
+    EnvVarGuard model_guard("GEMMA3_4B_MODEL_URL", std::nullopt);
+    EnvVarGuard mmproj_guard("GEMMA3_4B_MMPROJ_URL", std::nullopt);
 
     std::string error;
     CHECK_FALSE(VisualLlmRuntime::resolve_active_backend({}, &error).has_value());
-    CHECK(error == "Missing visual LLM download URLs. Check LLAVA_MODEL_URL and LLAVA_MMPROJ_URL.");
+    CHECK(error == "Missing visual LLM download URLs. Check GEMMA3_4B_MODEL_URL and GEMMA3_4B_MMPROJ_URL.");
 }
 
 TEST_CASE("VisualLlmRuntime resolves a non-default backend by id") {
@@ -154,7 +154,7 @@ TEST_CASE("VisualLlmRuntime accepts legacy generic mmproj files when metadata ma
     CHECK(*backend->path_for(VisualModelArtifactKind::Mmproj) == legacy_mmproj_path);
 }
 
-TEST_CASE("VisualLlmRuntime accepts the legacy default LLaVA generic mmproj without metadata") {
+TEST_CASE("VisualLlmRuntime accepts the legacy LLaVA generic mmproj without metadata") {
     TempDir home_dir;
     EnvVarGuard home_guard("HOME", home_dir.path().string());
     const std::string model_url = "https://example.com/llava-model.gguf";
@@ -162,8 +162,9 @@ TEST_CASE("VisualLlmRuntime accepts the legacy default LLaVA generic mmproj with
     EnvVarGuard model_guard("LLAVA_MODEL_URL", model_url);
     EnvVarGuard mmproj_guard("LLAVA_MMPROJ_URL", mmproj_url);
 
-    const auto& descriptor = default_visual_model_descriptor();
-    const auto model_path = visual_artifact_storage_path(descriptor, descriptor.artifacts[0]);
+    const auto* descriptor = find_visual_model_descriptor("llava-v1.6-mistral-7b");
+    REQUIRE(descriptor != nullptr);
+    const auto model_path = visual_artifact_storage_path(*descriptor, descriptor->artifacts[0]);
     const auto legacy_mmproj_path =
         std::filesystem::path(Utils::make_default_path_to_file_from_download_url(mmproj_url));
 
@@ -172,7 +173,7 @@ TEST_CASE("VisualLlmRuntime accepts the legacy default LLaVA generic mmproj with
     std::ofstream(legacy_mmproj_path).put('x');
 
     std::string error;
-    const auto backend = VisualLlmRuntime::resolve_active_backend({}, &error);
+    const auto backend = VisualLlmRuntime::resolve_active_backend("llava-v1.6-mistral-7b", &error);
     REQUIRE(backend.has_value());
     CHECK(error.empty());
     REQUIRE(backend->path_for(VisualModelArtifactKind::Mmproj).has_value());

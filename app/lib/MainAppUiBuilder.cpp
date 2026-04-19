@@ -574,6 +574,7 @@ UiTranslator::Dependencies MainAppUiBuilder::build_translator_dependencies(MainA
             app.toggle_llm_action,
             app.manage_storage_plugins_action,
             app.manage_whitelists_action,
+            app.clear_cache_action,
             app.development_prompt_logging_action,
             app.consistency_pass_action,
             app.english_action,
@@ -787,6 +788,15 @@ void MainAppUiBuilder::build_settings_menu(MainApp& app) {
         const CategoryLanguage chosen = static_cast<CategoryLanguage>(action->data().toInt());
         app.on_category_language_selected(chosen);
     });
+
+    app.settings_menu->addSeparator();
+    app.clear_cache_action = app.settings_menu->addAction(
+        icon_for(app, "edit-clear", QStyle::SP_TrashIcon),
+        QString());
+    QObject::connect(app.clear_cache_action,
+                     &QAction::triggered,
+                     &app,
+                     &MainApp::show_cache_cleanup_dialog);
 }
 
 void MainAppUiBuilder::build_plugins_menu(MainApp& app) {

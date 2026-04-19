@@ -1646,6 +1646,11 @@ Wenn Sie Beenden wählen, wird die Anwendung geschlossen.</translation>
             <translation>Ein optionales Update ist verfügbar. Möchten Sie jetzt aktualisieren?</translation>
         </message>
         <message>
+            <location filename="../../lib/Updater.cpp" line="132" />
+            <source>What's new in version %1:</source>
+            <translation>Neuerungen in Version %1:</translation>
+        </message>
+        <message>
             <location filename="../../lib/Updater.cpp" line="210" />
             <source>Skip This Version</source>
             <translation>Diese Version überspringen</translation>
@@ -1784,6 +1789,10 @@ Versucht:
 %1</source>
             <translation>Die Hauptanwendung konnte nicht gestartet werden:
 %1</translation>
+        </message>
+        <message>
+            <source>Failed to clear the categorization cache.</source>
+            <translation>Der Kategorisierungscache konnte nicht geleert werden.</translation>
         </message>
     </context>
     <context>
@@ -2112,6 +2121,95 @@ Versucht:
             <location filename="../../lib/WhitelistManagerDialog.cpp" line="170" />
             <source>The default list cannot be removed.</source>
             <translation>Die Standardliste kann nicht entfernt werden.</translation>
+        </message>
+        <message>
+            <source>Clear cache…</source>
+            <translation>Cache leeren…</translation>
+        </message>
+    </context>
+    <context>
+        <name>CacheMaintenanceDialog</name>
+        <message>
+            <source>Clear cache</source>
+            <translation>Cache leeren</translation>
+        </message>
+        <message>
+            <source>Remove cached categorization results, image place lookups, or log files. Downloaded models are managed separately in the LLM dialog.</source>
+            <translation>Entfernt zwischengespeicherte Kategorisierungsergebnisse, Ortszuordnungen für Bilder und Protokolldateien. Heruntergeladene Modelle werden separat im LLM-Dialog verwaltet.</translation>
+        </message>
+        <message>
+            <source>Cache cleanup is unavailable while analysis is running.</source>
+            <translation>Die Cache-Bereinigung ist während der Analyse nicht verfügbar.</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>Keine</translation>
+        </message>
+        <message>
+            <source>Path:</source>
+            <translation>Pfad:</translation>
+        </message>
+        <message>
+            <source>Estimated size:</source>
+            <translation>Geschätzte Größe:</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>Leeren</translation>
+        </message>
+        <message>
+            <source>This cache is already empty.</source>
+            <translation>Dieser Cache ist bereits leer.</translation>
+        </message>
+        <message>
+            <source>Confirm cache clear</source>
+            <translation>Cache-Leerung bestätigen</translation>
+        </message>
+        <message>
+            <source>Clear %1?</source>
+            <translation>%1 leeren?</translation>
+        </message>
+        <message>
+            <source>Path: %1
+Estimated reclaimed space: %2
+
+This cannot be undone.</source>
+            <translation>Pfad: %1
+Geschätzt freigebener Speicherplatz: %2
+
+Dies kann nicht rückgängig gemacht werden.</translation>
+        </message>
+        <message>
+            <source>The selected cache could not be removed.</source>
+            <translation>Der ausgewählte Cache konnte nicht entfernt werden.</translation>
+        </message>
+        <message>
+            <source>Cleared %1.</source>
+            <translation>%1 wurde geleert.</translation>
+        </message>
+        <message>
+            <source>Categorization cache</source>
+            <translation>Kategorisierungscache</translation>
+        </message>
+        <message>
+            <source>Image location cache</source>
+            <translation>Bild-Ortscache</translation>
+        </message>
+        <message>
+            <source>Logs</source>
+            <translation>Protokolle</translation>
+        </message>
+        <message>
+            <source>Stores past file and folder categorization results so repeated runs can reuse them.</source>
+            <translation>Speichert frühere Kategorisierungsergebnisse für Dateien und Ordner, damit spätere Durchläufe sie wiederverwenden können.</translation>
+        </message>
+        <message>
+            <source>Stores reverse-geocoded place names for photo GPS coordinates so the app does not look them up again.</source>
+            <translation>Speichert per Reverse-Geocoding ermittelte Ortsnamen für Foto-GPS-Koordinaten, damit die App sie nicht erneut abfragen muss.</translation>
+        </message>
+        <message>
+            <source>Stores application log files used for troubleshooting and error reporting.</source>
+            <translation>Speichert Protokolldateien der Anwendung zur Fehlersuche und Fehlerberichterstattung.</translation>
         </message>
     </context>
     <context>

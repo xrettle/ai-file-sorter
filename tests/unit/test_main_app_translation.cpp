@@ -65,6 +65,7 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
         QString installer_ready;
         QString quit_and_launch_message;
         QString quit_and_launch_button;
+        QString whats_new_in_version;
     };
 
     const std::vector<ExpectedTranslation> expected = {
@@ -78,7 +79,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Downloading the update installer..."),
          QStringLiteral("Installer Ready"),
          QStringLiteral("Quit the app and launch the installer to update"),
-         QStringLiteral("Quit and Launch Installer")},
+         QStringLiteral("Quit and Launch Installer"),
+         QStringLiteral("What's new in version %1:")},
         {Language::French,
          QStringLiteral("Échec de la mise à jour"),
          QStringLiteral("Mettre à jour manuellement"),
@@ -89,7 +91,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Téléchargement du programme d'installation de la mise à jour..."),
          QStringLiteral("Programme d'installation prêt"),
          QStringLiteral("Quittez l'application et lancez le programme d'installation pour effectuer la mise à jour"),
-         QStringLiteral("Quitter et lancer le programme d'installation")},
+         QStringLiteral("Quitter et lancer le programme d'installation"),
+         QStringLiteral("Nouveautés de la version %1 :")},
         {Language::German,
          QStringLiteral("Update fehlgeschlagen"),
          QStringLiteral("Manuell aktualisieren"),
@@ -100,7 +103,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Das Update-Installationsprogramm wird heruntergeladen..."),
          QStringLiteral("Installationsprogramm bereit"),
          QStringLiteral("Beenden Sie die App und starten Sie das Installationsprogramm, um zu aktualisieren"),
-         QStringLiteral("Beenden und Installationsprogramm starten")},
+         QStringLiteral("Beenden und Installationsprogramm starten"),
+         QStringLiteral("Neuerungen in Version %1:")},
         {Language::Italian,
          QStringLiteral("Aggiornamento non riuscito"),
          QStringLiteral("Aggiorna manualmente"),
@@ -111,7 +115,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Download del programma di installazione dell'aggiornamento..."),
          QStringLiteral("Programma di installazione pronto"),
          QStringLiteral("Chiudi l'app e avvia il programma di installazione per aggiornare"),
-         QStringLiteral("Chiudi e avvia il programma di installazione")},
+         QStringLiteral("Chiudi e avvia il programma di installazione"),
+         QStringLiteral("Novità della versione %1:")},
         {Language::Spanish,
          QStringLiteral("La actualización falló"),
          QStringLiteral("Actualizar manualmente"),
@@ -122,7 +127,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Descargando el instalador de la actualización..."),
          QStringLiteral("Instalador listo"),
          QStringLiteral("Cierra la aplicación y ejecuta el instalador para actualizar"),
-         QStringLiteral("Cerrar y ejecutar instalador")},
+         QStringLiteral("Cerrar y ejecutar instalador"),
+         QStringLiteral("Novedades de la versión %1:")},
         {Language::Dutch,
          QStringLiteral("Bijwerken mislukt"),
          QStringLiteral("Handmatig bijwerken"),
@@ -133,7 +139,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Het installatieprogramma van de update wordt gedownload..."),
          QStringLiteral("Installatieprogramma gereed"),
          QStringLiteral("Sluit de app af en start het installatieprogramma om bij te werken"),
-         QStringLiteral("Afsluiten en installatieprogramma starten")},
+         QStringLiteral("Afsluiten en installatieprogramma starten"),
+         QStringLiteral("Nieuw in versie %1:")},
         {Language::Turkish,
          QStringLiteral("Güncelleme başarısız oldu"),
          QStringLiteral("Elle güncelle"),
@@ -144,7 +151,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("Güncelleme yükleyicisi indiriliyor..."),
          QStringLiteral("Yükleyici hazır"),
          QStringLiteral("Güncellemek için uygulamadan çıkın ve yükleyiciyi başlatın"),
-         QStringLiteral("Çık ve yükleyiciyi başlat")},
+         QStringLiteral("Çık ve yükleyiciyi başlat"),
+         QStringLiteral("%1 sürümündeki yenilikler:")},
         {Language::Korean,
          QStringLiteral("업데이트 실패"),
          QStringLiteral("수동으로 업데이트"),
@@ -155,7 +163,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
          QStringLiteral("업데이트 설치 프로그램을 다운로드하는 중..."),
          QStringLiteral("설치 프로그램 준비 완료"),
          QStringLiteral("업데이트하려면 앱을 종료하고 설치 프로그램을 실행하세요"),
-         QStringLiteral("종료 후 설치 프로그램 실행")}
+         QStringLiteral("종료 후 설치 프로그램 실행"),
+         QStringLiteral("%1 버전의 새로운 기능:")}
     };
 
     for (const auto& entry : expected) {
@@ -171,6 +180,7 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
         const auto installer_ready = QCoreApplication::translate("QObject", "Installer Ready");
         const auto quit_and_launch_message = QCoreApplication::translate("QObject", "Quit the app and launch the installer to update");
         const auto quit_and_launch_button = QCoreApplication::translate("QObject", "Quit and Launch Installer");
+        const auto whats_new_in_version = QCoreApplication::translate("QObject", "What's new in version %1:");
 
         CAPTURE(static_cast<int>(entry.language),
                 update_failed,
@@ -182,7 +192,8 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
                 downloading_installer,
                 installer_ready,
                 quit_and_launch_message,
-                quit_and_launch_button);
+                quit_and_launch_button,
+                whats_new_in_version);
 
         REQUIRE(update_failed == entry.update_failed);
         REQUIRE(update_manually == entry.update_manually);
@@ -194,6 +205,7 @@ TEST_CASE("Updater strings are translated for all supported UI languages") {
         REQUIRE(installer_ready == entry.installer_ready);
         REQUIRE(quit_and_launch_message == entry.quit_and_launch_message);
         REQUIRE(quit_and_launch_button == entry.quit_and_launch_button);
+        REQUIRE(whats_new_in_version == entry.whats_new_in_version);
     }
 }
 #endif

@@ -24,6 +24,7 @@
 #include <QObject>
 #include <QPushButton>
 #include <QProgressDialog>
+#include <QStringList>
 #include <QUrl>
 
 #ifdef AI_FILE_SORTER_TEST_BUILD
@@ -119,6 +120,32 @@ void open_download_url(const std::string& url)
     const QUrl qurl(QString::fromStdString(url));
     if (!QDesktopServices::openUrl(qurl)) {
         updater_log(spdlog::level::err, "Failed to open URL: {}", url);
+    }
+}
+
+QString format_update_changelog(const UpdateInfo& info)
+{
+    if (!info.has_changelog()) {
+        return {};
+    }
+
+    QStringList lines;
+    for (const auto& item : info.changelog_items) {
+        lines.append(QStringLiteral("- %1").arg(QString::fromStdString(item)));
+    }
+
+    return QObject::tr("What's new in version %1:")
+               .arg(QString::fromStdString(info.current_version))
+        + QStringLiteral("\n")
+        + lines.join(QStringLiteral("\n"));
+}
+
+void apply_update_changelog(QMessageBox& box, const UpdateInfo& info)
+{
+    box.setTextFormat(Qt::PlainText);
+    const QString changelog = format_update_changelog(info);
+    if (!changelog.isEmpty()) {
+        box.setInformativeText(changelog);
     }
 }
 }
@@ -271,6 +298,7 @@ void Updater::show_required_update_dialog(const UpdateInfo& info, QWidget* paren
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle(QObject::tr("Required Update Available"));
         box.setText(QObject::tr("A required update is available. Please update to continue.\nIf you choose to quit, the application will close."));
+        apply_update_changelog(box, info);
         QPushButton* update_now = box.addButton(QObject::tr("Update Now"), QMessageBox::AcceptRole);
         QPushButton* quit_button = box.addButton(QObject::tr("Quit"), QMessageBox::RejectRole);
         box.setDefaultButton(update_now);
@@ -297,6 +325,7 @@ void Updater::show_optional_update_dialog(const UpdateInfo& info, QWidget* paren
     box.setIcon(QMessageBox::Information);
     box.setWindowTitle(QObject::tr("Optional Update Available"));
     box.setText(QObject::tr("An optional update is available. Would you like to update now?"));
+    apply_update_changelog(box, info);
     QPushButton* update_now = box.addButton(QObject::tr("Update Now"), QMessageBox::AcceptRole);
     QPushButton* skip_button = box.addButton(QObject::tr("Skip This Version"), QMessageBox::RejectRole);
     QPushButton* cancel_button = box.addButton(QObject::tr("Cancel"), QMessageBox::DestructiveRole);
@@ -538,6 +567,20 @@ bool UpdaterTestAccess::trigger_update_action(Updater& updater,
                                               bool quit_after_open)
 {
     return updater.trigger_update_action(info, parent, quit_after_open);
+}
+
+void UpdaterTestAccess::show_required_update_dialog(Updater& updater,
+                                                    const UpdateInfo& info,
+                                                    QWidget* parent)
+{
+    updater.show_required_update_dialog(info, parent);
+}
+
+void UpdaterTestAccess::show_optional_update_dialog(Updater& updater,
+                                                    const UpdateInfo& info,
+                                                    QWidget* parent)
+{
+    updater.show_optional_update_dialog(info, parent);
 }
 
 bool UpdaterTestAccess::handle_update_error(Updater& updater,

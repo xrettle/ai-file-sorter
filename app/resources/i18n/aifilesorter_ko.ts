@@ -1646,6 +1646,11 @@ If you choose to quit, the application will close.</source>
             <translation>선택적 업데이트가 있습니다. 지금 업데이트하시겠습니까?</translation>
         </message>
         <message>
+            <location filename="../../lib/Updater.cpp" line="132" />
+            <source>What's new in version %1:</source>
+            <translation>%1 버전의 새로운 기능:</translation>
+        </message>
+        <message>
             <location filename="../../lib/Updater.cpp" line="210" />
             <source>Skip This Version</source>
             <translation>이 버전 건너뛰기</translation>
@@ -1784,6 +1789,10 @@ Tried:
 %1</source>
             <translation>메인 애플리케이션 실행 파일을 시작하지 못했습니다:
 %1</translation>
+        </message>
+        <message>
+            <source>Failed to clear the categorization cache.</source>
+            <translation>분류 캐시를 지우지 못했습니다.</translation>
         </message>
     </context>
     <context>
@@ -2112,6 +2121,95 @@ Tried:
             <location filename="../../lib/WhitelistManagerDialog.cpp" line="170" />
             <source>The default list cannot be removed.</source>
             <translation>기본 목록은 제거할 수 없습니다.</translation>
+        </message>
+        <message>
+            <source>Clear cache…</source>
+            <translation>캐시 지우기…</translation>
+        </message>
+    </context>
+    <context>
+        <name>CacheMaintenanceDialog</name>
+        <message>
+            <source>Clear cache</source>
+            <translation>캐시 지우기</translation>
+        </message>
+        <message>
+            <source>Remove cached categorization results, image place lookups, or log files. Downloaded models are managed separately in the LLM dialog.</source>
+            <translation>캐시된 분류 결과, 이미지 위치 조회 기록, 로그 파일을 제거합니다. 다운로드한 모델은 LLM 대화상자에서 별도로 관리됩니다.</translation>
+        </message>
+        <message>
+            <source>Cache cleanup is unavailable while analysis is running.</source>
+            <translation>분석이 실행 중일 때는 캐시 정리를 사용할 수 없습니다.</translation>
+        </message>
+        <message>
+            <source>None</source>
+            <translation>없음</translation>
+        </message>
+        <message>
+            <source>Path:</source>
+            <translation>경로:</translation>
+        </message>
+        <message>
+            <source>Estimated size:</source>
+            <translation>예상 크기:</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <translation>지우기</translation>
+        </message>
+        <message>
+            <source>This cache is already empty.</source>
+            <translation>이 캐시는 이미 비어 있습니다.</translation>
+        </message>
+        <message>
+            <source>Confirm cache clear</source>
+            <translation>캐시 삭제 확인</translation>
+        </message>
+        <message>
+            <source>Clear %1?</source>
+            <translation>%1을(를) 지울까요?</translation>
+        </message>
+        <message>
+            <source>Path: %1
+Estimated reclaimed space: %2
+
+This cannot be undone.</source>
+            <translation>경로: %1
+예상 회수 공간: %2
+
+이 작업은 되돌릴 수 없습니다.</translation>
+        </message>
+        <message>
+            <source>The selected cache could not be removed.</source>
+            <translation>선택한 캐시를 제거하지 못했습니다.</translation>
+        </message>
+        <message>
+            <source>Cleared %1.</source>
+            <translation>%1을(를) 지웠습니다.</translation>
+        </message>
+        <message>
+            <source>Categorization cache</source>
+            <translation>분류 캐시</translation>
+        </message>
+        <message>
+            <source>Image location cache</source>
+            <translation>이미지 위치 캐시</translation>
+        </message>
+        <message>
+            <source>Logs</source>
+            <translation>로그</translation>
+        </message>
+        <message>
+            <source>Stores past file and folder categorization results so repeated runs can reuse them.</source>
+            <translation>이전 파일 및 폴더 분류 결과를 저장하여 다음 실행에서 다시 사용할 수 있게 합니다.</translation>
+        </message>
+        <message>
+            <source>Stores reverse-geocoded place names for photo GPS coordinates so the app does not look them up again.</source>
+            <translation>사진 GPS 좌표에 대한 역지오코딩 장소 이름을 저장하여 앱이 다시 조회하지 않도록 합니다.</translation>
+        </message>
+        <message>
+            <source>Stores application log files used for troubleshooting and error reporting.</source>
+            <translation>문제 해결 및 오류 보고에 사용하는 애플리케이션 로그 파일을 저장합니다.</translation>
         </message>
     </context>
     <context>

@@ -682,12 +682,12 @@ Runtime and GPU:
 
 Visual LLM:
 
-- `LLAVA_MODEL_URL` - download URL for the default LLaVA 1.6 Mistral 7B text model.
-- `LLAVA_MMPROJ_URL` - download URL for the default LLaVA 1.6 Mistral 7B mmproj file.
+- `LLAVA_MODEL_URL` - download URL for the LLaVA 1.6 Mistral 7B text model.
+- `LLAVA_MMPROJ_URL` - download URL for the LLaVA 1.6 Mistral 7B mmproj file.
 - `LLAVA_VICUNA_MODEL_URL` - download URL for the LLaVA 1.6 Vicuna 7B text model.
 - `LLAVA_VICUNA_MMPROJ_URL` - download URL for the LLaVA 1.6 Vicuna 7B mmproj file.
-- `GEMMA3_4B_MODEL_URL` - download URL for the Gemma 3 4B IT text model.
-- `GEMMA3_4B_MMPROJ_URL` - download URL for the Gemma 3 4B IT mmproj file.
+- `GEMMA3_4B_MODEL_URL` - download URL for the default/recommended Gemma 3 4B IT text model.
+- `GEMMA3_4B_MMPROJ_URL` - download URL for the default/recommended Gemma 3 4B IT mmproj file.
 - `AI_FILE_SORTER_VISUAL_USE_GPU` - force visual encoder GPU usage (`1`) or CPU (`0`). Defaults to auto; Vulkan may fall back to CPU if VRAM is low.
 
 Timeouts and logging:
@@ -701,7 +701,7 @@ Storage and updates:
 
 - `AI_FILE_SORTER_CONFIG_DIR` - override the base config directory (where `config.ini` lives).
 - `CATEGORIZATION_CACHE_FILE` - override the SQLite cache filename inside the config dir.
-- `UPDATE_SPEC_FILE_URL` - override the update feed spec URL (dev/testing). The updater now reads per-platform streams from `update.windows`, `update.macos`, and `update.linux`, with legacy single-stream feeds still accepted.
+- `UPDATE_SPEC_FILE_URL` - override the update feed spec URL (dev/testing). The updater now reads per-platform streams from `update.windows`, `update.macos`, and `update.linux`, with legacy single-stream feeds still accepted. Each stream may also include its own `changelog` list for the update dialog.
 - `AI_FILE_SORTER_UPDATER_TEST_MODE` - enable Windows updater live-test mode (`1`/`true`). When enabled, the app skips the update feed fetch and synthesizes a newer version from the values below.
 - `AI_FILE_SORTER_UPDATER_TEST_URL` - direct URL for the Windows updater live-test package. This can point to an `.exe`, `.msi`, or a `.zip` containing exactly one `.exe` or `.msi`.
 - `AI_FILE_SORTER_UPDATER_TEST_SHA256` - SHA-256 checksum for the downloaded live-test package. If the URL points to a ZIP, this checksum must be for the ZIP archive itself.
@@ -716,22 +716,35 @@ Example update feed:
     "current_version": "1.7.1",
     "min_version": "1.6.0",
     "download_url": "https://filesorter.app/download",
+    "changelog": [
+      "General compatibility fixes for older clients"
+    ],
     "windows": {
       "current_version": "1.7.1",
       "min_version": "1.6.0",
       "download_url": "https://filesorter.app/download",
+      "changelog": [
+        "Improved installer handoff on Windows",
+        "Added more update details in the dialog"
+      ],
       "installer_url": "https://filesorter.app/downloads/AIFileSorterSetup-1.7.1.exe",
       "installer_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
     },
     "macos": {
       "current_version": "1.7.1",
       "min_version": "1.6.0",
-      "download_url": "https://filesorter.app/download"
+      "download_url": "https://filesorter.app/download",
+      "changelog": [
+        "Updated notarized package metadata"
+      ]
     },
     "linux": {
       "current_version": "1.7.1",
       "min_version": "1.6.0",
-      "download_url": "https://filesorter.app/download"
+      "download_url": "https://filesorter.app/download",
+      "changelog": [
+        "Improved Linux wrapper backend selection"
+      ]
     }
   }
 }
@@ -742,6 +755,7 @@ Compatibility note:
 - Older app versions only read the flat top-level fields under `update`, so keep `current_version`, `min_version`, and `download_url` there as a legacy compatibility stream if you still need to support them.
 - Newer app versions prefer the platform-specific streams and will use `update.windows`, `update.macos`, or `update.linux` when present.
 - The legacy compatibility stream can only represent one generic stream, not separate per-platform versions or installers.
+- `changelog` is evaluated per stream. Use a JSON array of strings for new feeds; each entry is shown as a bullet item in the update dialog for that stream.
 
 Windows-only direct installer updates:
 
@@ -795,7 +809,7 @@ What is stored:
 - Rename-only flag (used when picture/document rename-only modes are enabled).
 - Rename-applied flag (marks when a rename was executed so it is not offered again).
 
-If you rename or move a file from the Review dialog, the cache entry is updated to the new name. Already-renamed picture files are skipped for visual analysis and rename suggestions on later runs. In the Review dialog, those already-renamed rows are hidden when rename-only is enabled, but they stay visible when categorization is enabled so you can still move them into category folders. To reset a folder's cache, accept the recategorization prompt or delete the cache file (or point `CATEGORIZATION_CACHE_FILE` to a new filename).
+If you rename or move a file from the Review dialog, the cache entry is updated to the new name. Already-renamed picture files are skipped for visual analysis and rename suggestions on later runs. In the Review dialog, those already-renamed rows are hidden when rename-only is enabled, but they stay visible when categorization is enabled so you can still move them into category folders. To reset a folder's cache, accept the recategorization prompt. To clear the full categorization cache, image-location cache, or logs, use **Settings -> Clear cache**. You can also delete the cache file directly (or point `CATEGORIZATION_CACHE_FILE` to a new filename).
 
 ---
 
@@ -805,7 +819,7 @@ If you rename or move a file from the Review dialog, the cache entry is updated 
 - **Linux source installs**: `cd app && sudo make uninstall`
 - **macOS source installs**: `cd app && sudo make uninstall`
 
-For source installs, `make uninstall` removes the executable and the staged precompiled libraries. You can also delete cached local LLM models in `~/.local/share/aifilesorter/llms` (Linux) or `~/Library/Application Support/aifilesorter/llms` (macOS) if you no longer need them.
+For source installs, `make uninstall` removes the executable and the staged precompiled libraries. You can also delete downloaded local LLM models in `~/.local/share/aifilesorter/llms` (Linux) or `~/Library/Application Support/aifilesorter/llms` (macOS) if you no longer need them.
 
 ---
 

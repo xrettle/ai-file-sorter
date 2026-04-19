@@ -1220,6 +1220,50 @@ bool DatabaseManager::clear_directory_categorizations(const std::string& dir_pat
     return success;
 }
 
+bool DatabaseManager::clear_all_categorizations()
+{
+    if (!db) {
+        return false;
+    }
+
+    char* error_msg = nullptr;
+    const char* delete_sql = "DELETE FROM file_categorization;";
+    if (sqlite3_exec(db, delete_sql, nullptr, nullptr, &error_msg) != SQLITE_OK) {
+        db_log(spdlog::level::err,
+               "Failed to clear cached categorizations: {}",
+               error_msg ? error_msg : sqlite3_errmsg(db));
+        if (error_msg) {
+            sqlite3_free(error_msg);
+        }
+        return false;
+    }
+
+    const char* reset_sequence_sql =
+        "DELETE FROM sqlite_sequence WHERE name = 'file_categorization';";
+    if (sqlite3_exec(db, reset_sequence_sql, nullptr, nullptr, &error_msg) != SQLITE_OK) {
+        db_log(spdlog::level::warn,
+               "Failed to reset categorization cache sequence: {}",
+               error_msg ? error_msg : sqlite3_errmsg(db));
+        if (error_msg) {
+            sqlite3_free(error_msg);
+            error_msg = nullptr;
+        }
+    }
+
+    const char* vacuum_sql = "VACUUM;";
+    if (sqlite3_exec(db, vacuum_sql, nullptr, nullptr, &error_msg) != SQLITE_OK) {
+        db_log(spdlog::level::warn,
+               "Failed to vacuum categorization cache after clear: {}",
+               error_msg ? error_msg : sqlite3_errmsg(db));
+        if (error_msg) {
+            sqlite3_free(error_msg);
+        }
+    }
+
+    cached_results.clear();
+    return true;
+}
+
 bool DatabaseManager::has_categorization_style_conflict(const std::string& dir_path,
                                                         bool desired_style,
                                                         bool recursive) const {

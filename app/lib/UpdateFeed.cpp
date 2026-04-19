@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <cctype>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #if __has_include(<jsoncpp/json/json.h>)
     #include <jsoncpp/json/json.h>
@@ -86,6 +88,64 @@ std::string string_member(const Json::Value& object, const char* key)
     return {};
 }
 
+std::string normalized_changelog_item(std::string value)
+{
+    value = trim_copy(value);
+    if (value.empty()) {
+        return {};
+    }
+
+    static const std::string utf8_bullet = "\xE2\x80\xA2";
+    if (value.rfind(utf8_bullet, 0) == 0) {
+        value.erase(0, utf8_bullet.size());
+        value = trim_copy(value);
+    }
+
+    while (!value.empty() && (value.front() == '-' || value.front() == '*')) {
+        value.erase(value.begin());
+        value = trim_copy(value);
+    }
+
+    return value;
+}
+
+void append_changelog_item(std::vector<std::string>& items, std::string value)
+{
+    value = normalized_changelog_item(std::move(value));
+    if (!value.empty()) {
+        items.push_back(std::move(value));
+    }
+}
+
+std::vector<std::string> changelog_member(const Json::Value& object, const char* key)
+{
+    std::vector<std::string> items;
+    if (!object.isMember(key)) {
+        return items;
+    }
+
+    const Json::Value& value = object[key];
+    if (value.isArray()) {
+        for (const Json::Value& entry : value) {
+            if (entry.isString()) {
+                append_changelog_item(items, entry.asString());
+            }
+        }
+        return items;
+    }
+
+    if (!value.isString()) {
+        return items;
+    }
+
+    std::istringstream lines(value.asString());
+    std::string line;
+    while (std::getline(lines, line)) {
+        append_changelog_item(items, std::move(line));
+    }
+    return items;
+}
+
 } // namespace
 
 UpdateFeed::Platform UpdateFeed::current_platform()
@@ -135,6 +195,7 @@ std::optional<UpdateInfo> UpdateFeed::parse_for_platform(const std::string& upda
     info.release_notes_url = string_member(*stream, "release_notes_url");
     info.installer_url = string_member(*stream, "installer_url");
     info.installer_sha256 = normalized_sha256(string_member(*stream, "installer_sha256"));
+    info.changelog_items = changelog_member(*stream, "changelog");
 
     if (info.min_version.empty()) {
         info.min_version = "0.0.0";

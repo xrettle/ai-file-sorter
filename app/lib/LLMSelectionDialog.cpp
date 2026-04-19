@@ -99,6 +99,16 @@ void apply_progress_style(QProgressBar* bar)
 #endif
 }
 
+QString visual_backend_combo_label(const VisualModelDescriptor& backend)
+{
+    QString label = QString::fromUtf8(backend.display_name);
+    if (std::string_view(backend.id) == std::string_view(default_visual_model_descriptor().id)) {
+        label = QStringLiteral("%1 (%2)")
+                    .arg(label, LLMSelectionDialog::tr("Recommended"));
+    }
+    return label;
+}
+
 } // namespace
 
 
@@ -508,7 +518,7 @@ void LLMSelectionDialog::setup_ui()
     visual_layout->addWidget(visual_backend_row);
 
     for (const auto& backend : visual_model_descriptors()) {
-        visual_backend_combo->addItem(QString::fromUtf8(backend.display_name),
+        visual_backend_combo->addItem(visual_backend_combo_label(backend),
                                       QString::fromUtf8(backend.id));
         for (const auto& artifact : backend.artifacts) {
             auto entry = std::make_unique<VisualLlmDownloadEntry>();
@@ -2058,6 +2068,14 @@ LLMSelectionDialogTestAccess::VisualEntryRefs LLMSelectionDialogTestAccess::visu
 std::string LLMSelectionDialogTestAccess::selected_visual_model_id(const LLMSelectionDialog& dialog)
 {
     return dialog.get_selected_visual_model_id();
+}
+
+std::string LLMSelectionDialogTestAccess::selected_visual_model_label(const LLMSelectionDialog& dialog)
+{
+    if (!dialog.visual_backend_combo) {
+        return {};
+    }
+    return dialog.visual_backend_combo->currentText().toStdString();
 }
 
 void LLMSelectionDialogTestAccess::select_visual_backend(LLMSelectionDialog& dialog,
