@@ -181,6 +181,53 @@ TEST_CASE("Updater live test mode can read missing values from live-test.ini nex
     CHECK(*config.min_version == "1.0.0");
 }
 
+TEST_CASE("Updater uses the development update feed when development mode is enabled")
+{
+    TempDir config_dir;
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", config_dir.path().string());
+    EnvVarGuard update_spec_guard("UPDATE_SPEC_FILE_URL", std::nullopt);
+    EnvVarGuard development_update_spec_guard("UPDATE_SPEC_FILE_URL_DEVELOPMENT",
+                                              "https://example.com/aifs_version_dev.json");
+
+    Settings settings;
+    Updater updater(settings, true);
+
+    const auto selected_url = UpdaterTestAccess::selected_update_spec_file_url(updater);
+    REQUIRE(selected_url.has_value());
+    CHECK(*selected_url == "https://example.com/aifs_version_dev.json");
+}
+
+TEST_CASE("Updater falls back to the standard update feed in development mode when needed")
+{
+    TempDir config_dir;
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", config_dir.path().string());
+    EnvVarGuard update_spec_guard("UPDATE_SPEC_FILE_URL", "https://example.com/aifs_version.json");
+    EnvVarGuard development_update_spec_guard("UPDATE_SPEC_FILE_URL_DEVELOPMENT", std::nullopt);
+
+    Settings settings;
+    Updater updater(settings, true);
+
+    const auto selected_url = UpdaterTestAccess::selected_update_spec_file_url(updater);
+    REQUIRE(selected_url.has_value());
+    CHECK(*selected_url == "https://example.com/aifs_version.json");
+}
+
+TEST_CASE("Updater ignores the development update feed outside development mode")
+{
+    TempDir config_dir;
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", config_dir.path().string());
+    EnvVarGuard update_spec_guard("UPDATE_SPEC_FILE_URL", "https://example.com/aifs_version.json");
+    EnvVarGuard development_update_spec_guard("UPDATE_SPEC_FILE_URL_DEVELOPMENT",
+                                              "https://example.com/aifs_version_dev.json");
+
+    Settings settings;
+    Updater updater(settings);
+
+    const auto selected_url = UpdaterTestAccess::selected_update_spec_file_url(updater);
+    REQUIRE(selected_url.has_value());
+    CHECK(*selected_url == "https://example.com/aifs_version.json");
+}
+
 TEST_CASE("Updater live test flags override live-test.ini values")
 {
     TempDir temp_dir;

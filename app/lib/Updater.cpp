@@ -32,6 +32,9 @@
 #endif
 
 namespace {
+constexpr const char* kUpdateSpecFileUrlEnv = "UPDATE_SPEC_FILE_URL";
+constexpr const char* kDevelopmentUpdateSpecFileUrlEnv = "UPDATE_SPEC_FILE_URL_DEVELOPMENT";
+
 template <typename... Args>
 void updater_log(spdlog::level::level_enum level, const char* fmt, Args&&... args) {
     auto message = fmt::format(fmt::runtime(fmt), std::forward<Args>(args)...);
@@ -76,6 +79,17 @@ bool env_flag_enabled(const char* key)
         return static_cast<char>(std::tolower(ch));
     });
     return lowered == "1" || lowered == "true" || lowered == "yes" || lowered == "on";
+}
+
+std::optional<std::string> resolve_update_spec_file_url(bool development_mode)
+{
+    if (development_mode) {
+        if (auto development_url = env_string(kDevelopmentUpdateSpecFileUrlEnv)) {
+            return development_url;
+        }
+    }
+
+    return env_string(kUpdateSpecFileUrlEnv);
 }
 
 std::string normalized_sha256_copy(std::string value)
@@ -151,11 +165,11 @@ void apply_update_changelog(QMessageBox& box, const UpdateInfo& info)
 }
 
 
-Updater::Updater(Settings& settings) 
+Updater::Updater(Settings& settings, bool development_mode)
     :
     settings(settings),
     installer(settings),
-    update_spec_file_url_(env_string("UPDATE_SPEC_FILE_URL")),
+    update_spec_file_url_(resolve_update_spec_file_url(development_mode)),
     open_download_url_fn_([](const std::string& url) { open_download_url(url); }),
     quit_fn_([]() { QApplication::quit(); })
 {}
@@ -474,7 +488,12 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 
 std::string Updater::fetch_update_metadata() const {
     if (!update_spec_file_url_) {
-        throw std::runtime_error("Environment variable UPDATE_SPEC_FILE_URL is not set");
+        throw std::runtime_error(
+            std::string("Update feed URL is not configured. Set ")
+            + kUpdateSpecFileUrlEnv
+            + " or "
+            + kDevelopmentUpdateSpecFileUrlEnv
+            + ".");
     }
 
     CURL *curl = curl_easy_init();
@@ -535,6 +554,11 @@ bool UpdaterTestAccess::is_update_available(Updater& updater)
 std::optional<UpdateInfo> UpdaterTestAccess::current_update_info(const Updater& updater)
 {
     return updater.update_info;
+}
+
+std::optional<std::string> UpdaterTestAccess::selected_update_spec_file_url(const Updater& updater)
+{
+    return updater.update_spec_file_url_;
 }
 
 bool UpdaterTestAccess::has_update_task(const Updater& updater)

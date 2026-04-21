@@ -651,7 +651,7 @@ void MainApp::start_updater()
     if (!UpdaterBuildConfig::update_checks_enabled()) {
         return;
     }
-    auto* updater = new Updater(settings);
+    auto* updater = new Updater(settings, development_mode_);
     updater->begin();
 }
 

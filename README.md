@@ -701,7 +701,8 @@ Storage and updates:
 
 - `AI_FILE_SORTER_CONFIG_DIR` - override the base config directory (where `config.ini` lives).
 - `CATEGORIZATION_CACHE_FILE` - override the SQLite cache filename inside the config dir.
-- `UPDATE_SPEC_FILE_URL` - override the update feed spec URL (dev/testing). The updater now reads per-platform streams from `update.windows`, `update.macos`, and `update.linux`, with legacy single-stream feeds still accepted. Each stream may also include its own `changelog` list for the update dialog.
+- `UPDATE_SPEC_FILE_URL` - primary update feed spec URL used for normal runs. The updater now reads per-platform streams from `update.windows`, `update.macos`, and `update.linux`, with legacy single-stream feeds still accepted. Each stream may also include its own `changelog` list for the update dialog.
+- `UPDATE_SPEC_FILE_URL_DEVELOPMENT` - alternate update feed spec URL used when the app starts with `--development`. If this value is unset, development mode falls back to `UPDATE_SPEC_FILE_URL`.
 - `AI_FILE_SORTER_UPDATER_TEST_MODE` - enable Windows updater live-test mode (`1`/`true`). When enabled, the app skips the update feed fetch and synthesizes a newer version from the values below.
 - `AI_FILE_SORTER_UPDATER_TEST_URL` - direct URL for the Windows updater live-test package. This can point to an `.exe`, `.msi`, or a `.zip` containing exactly one `.exe` or `.msi`.
 - `AI_FILE_SORTER_UPDATER_TEST_SHA256` - SHA-256 checksum for the downloaded live-test package. If the URL points to a ZIP, this checksum must be for the ZIP archive itself.
@@ -763,6 +764,11 @@ Windows-only direct installer updates:
 - `installer_sha256` - SHA-256 checksum used to verify the downloaded installer before launch.
 - `installer_url` can now also point to a ZIP archive, as long as the archive contains exactly one installer payload (`.exe` or `.msi`).
 - When both fields are present on Windows, the app can download the installer, verify it, and then prompt: `Quit the app and launch the installer to update`.
+
+Development feed selection:
+
+- When the app starts with `--development`, the updater prefers `UPDATE_SPEC_FILE_URL_DEVELOPMENT`.
+- If `UPDATE_SPEC_FILE_URL_DEVELOPMENT` is unset, development mode falls back to `UPDATE_SPEC_FILE_URL`.
 
 Windows updater live-test mode:
 

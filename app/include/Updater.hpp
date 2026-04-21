@@ -20,7 +20,7 @@ class UpdaterTestAccess;
 class Updater
 {
 public:
-    explicit Updater(Settings& settings);
+    explicit Updater(Settings& settings, bool development_mode = false);
     ~Updater();
     void begin();
 

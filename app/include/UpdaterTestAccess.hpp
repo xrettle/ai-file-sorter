@@ -6,6 +6,8 @@
 
 #include <QString>
 #include <functional>
+#include <optional>
+#include <string>
 
 class QWidget;
 class Updater;
@@ -14,6 +16,7 @@ class UpdaterTestAccess {
 public:
     static bool is_update_available(Updater& updater);
     static std::optional<UpdateInfo> current_update_info(const Updater& updater);
+    static std::optional<std::string> selected_update_spec_file_url(const Updater& updater);
     static bool has_update_task(const Updater& updater);
     static void wait_for_update_task(Updater& updater);
     static void set_open_download_url_handler(Updater& updater,
