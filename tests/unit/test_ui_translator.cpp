@@ -82,6 +82,7 @@ struct UiTranslatorTestHarness {
     QAction* toggle_llm_action = new QAction(&window);
     QAction* manage_storage_plugins_action = new QAction(&window);
     QAction* manage_whitelists_action = new QAction(&window);
+    QAction* reset_learning_action = new QAction(&window);
     QAction* clear_cache_action = new QAction(&window);
     QAction* development_prompt_logging_action = new QAction(&window);
     QAction* consistency_pass_action = new QAction(&window);
@@ -221,6 +222,7 @@ struct UiTranslatorTestHarness {
                 toggle_llm_action,
                 manage_storage_plugins_action,
                 manage_whitelists_action,
+                reset_learning_action,
                 clear_cache_action,
                 development_prompt_logging_action,
                 consistency_pass_action,
@@ -319,6 +321,7 @@ void verify_menus_and_actions(const UiTranslatorTestHarness& h)
     REQUIRE(h.toggle_llm_action->text() == QStringLiteral("Select &LLM…"));
     REQUIRE(h.manage_storage_plugins_action->text() == QStringLiteral("Manage storage plugins…"));
     REQUIRE(h.manage_whitelists_action->text() == QStringLiteral("Manage category whitelists…"));
+    REQUIRE(h.reset_learning_action->text() == QStringLiteral("Reset learned behavior…"));
     REQUIRE(h.clear_cache_action->text() == QStringLiteral("Clear cache…"));
     REQUIRE(h.quick_start_action->text() == QStringLiteral("&Quick Start Guide"));
     REQUIRE(h.faq_action->text() == QStringLiteral("&FAQ"));

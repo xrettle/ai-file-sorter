@@ -236,6 +236,7 @@ void UiTranslator::translate_menus_and_actions() const
         {deps_.actions.toggle_llm_action, "Select &LLM…"},
         {deps_.actions.manage_storage_plugins_action, "Manage storage plugins…"},
         {deps_.actions.manage_whitelists_action, "Manage category whitelists…"},
+        {deps_.actions.reset_learning_action, "Reset learned behavior…"},
         {deps_.actions.clear_cache_action, "Clear cache…"},
         {deps_.actions.development_prompt_logging_action, "Log prompts and responses to stdout"},
         {deps_.actions.consistency_pass_action, "Run &consistency pass"},

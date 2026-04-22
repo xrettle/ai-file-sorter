@@ -1112,6 +1112,30 @@ Lütfen bu bağlantıyı elle açın:
             <source>[WARN] %1 will be re-categorized: %2</source>
             <translation>[UYARI] %1 yeniden kategorize edilecek: %2</translation>
         </message>
+        <message>
+            <source>Reset learned behavior?</source>
+            <translation>Öğrenilen davranış sıfırlansın mı?</translation>
+        </message>
+        <message>
+            <source>This removes category examples learned from your approved reviews. It does not clear ordinary caches or touch your files.</source>
+            <translation>Bu işlem, onayladığınız incelemelerden öğrenilen kategori örneklerini siler. Normal önbellekleri temizlemez ve dosyalarınıza dokunmaz.</translation>
+        </message>
+        <message>
+            <source>Current whitelists will be re-imported afterwards so selected whitelists still work.</source>
+            <translation>Seçili beyaz listelerin çalışmaya devam etmesi için mevcut beyaz listeler daha sonra yeniden içe aktarılır.</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>Sıfırla</translation>
+        </message>
+        <message>
+            <source>Failed to reset learned behavior: %1</source>
+            <translation>Öğrenilen davranış sıfırlanamadı: %1</translation>
+        </message>
+        <message>
+            <source>Learned behavior reset. Current whitelists remain configured.</source>
+            <translation>Öğrenilen davranış sıfırlandı. Mevcut beyaz listeler yapılandırılmış kalır.</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -2088,6 +2112,10 @@ Denenen yollar:
             <location filename="../../lib/UiTranslator.cpp" line="261" />
             <source>&amp;FAQ</source>
             <translation>&amp;SSS</translation>
+        </message>
+        <message>
+            <source>Reset learned behavior…</source>
+            <translation>Öğrenilen davranışı sıfırla…</translation>
         </message>
         <message>
             <location filename="../../lib/UiTranslator.cpp" line="276" />

@@ -1112,6 +1112,30 @@ Apri manualmente questo link:
             <source>[WARN] %1 will be re-categorized: %2</source>
             <translation>[AVVISO] %1 verrà ricategorizzato: %2</translation>
         </message>
+        <message>
+            <source>Reset learned behavior?</source>
+            <translation>Reimpostare il comportamento appreso?</translation>
+        </message>
+        <message>
+            <source>This removes category examples learned from your approved reviews. It does not clear ordinary caches or touch your files.</source>
+            <translation>Questa operazione rimuove gli esempi di categoria appresi dalle revisioni approvate. Non svuota le cache ordinarie e non modifica i file.</translation>
+        </message>
+        <message>
+            <source>Current whitelists will be re-imported afterwards so selected whitelists still work.</source>
+            <translation>Le whitelist correnti verranno reimportate in seguito, così le whitelist selezionate continueranno a funzionare.</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>Reimposta</translation>
+        </message>
+        <message>
+            <source>Failed to reset learned behavior: %1</source>
+            <translation>Impossibile reimpostare il comportamento appreso: %1</translation>
+        </message>
+        <message>
+            <source>Learned behavior reset. Current whitelists remain configured.</source>
+            <translation>Il comportamento appreso è stato reimpostato. Le whitelist correnti restano configurate.</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -2088,6 +2112,10 @@ Percorsi provati:
             <location filename="../../lib/UiTranslator.cpp" line="261" />
             <source>&amp;FAQ</source>
             <translation>&amp;FAQ</translation>
+        </message>
+        <message>
+            <source>Reset learned behavior…</source>
+            <translation>Reimposta comportamento appreso…</translation>
         </message>
         <message>
             <location filename="../../lib/UiTranslator.cpp" line="276" />

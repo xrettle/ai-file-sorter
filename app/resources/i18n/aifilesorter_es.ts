@@ -1112,6 +1112,30 @@ Abre este enlace manualmente:
             <source>[WARN] %1 will be re-categorized: %2</source>
             <translation>[ADVERTENCIA] %1 se recategorizará: %2</translation>
         </message>
+        <message>
+            <source>Reset learned behavior?</source>
+            <translation>¿Restablecer el comportamiento aprendido?</translation>
+        </message>
+        <message>
+            <source>This removes category examples learned from your approved reviews. It does not clear ordinary caches or touch your files.</source>
+            <translation>Esto elimina los ejemplos de categorías aprendidos a partir de tus revisiones aprobadas. No borra las cachés normales ni toca tus archivos.</translation>
+        </message>
+        <message>
+            <source>Current whitelists will be re-imported afterwards so selected whitelists still work.</source>
+            <translation>Las listas blancas actuales se volverán a importar después para que las listas seleccionadas sigan funcionando.</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>Restablecer</translation>
+        </message>
+        <message>
+            <source>Failed to reset learned behavior: %1</source>
+            <translation>No se pudo restablecer el comportamiento aprendido: %1</translation>
+        </message>
+        <message>
+            <source>Learned behavior reset. Current whitelists remain configured.</source>
+            <translation>Se restableció el comportamiento aprendido. Las listas blancas actuales siguen configuradas.</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -2088,6 +2112,10 @@ Intentado:
             <location filename="../../lib/UiTranslator.cpp" line="261" />
             <source>&amp;FAQ</source>
             <translation>&amp;FAQ</translation>
+        </message>
+        <message>
+            <source>Reset learned behavior…</source>
+            <translation>Restablecer comportamiento aprendido…</translation>
         </message>
         <message>
             <location filename="../../lib/UiTranslator.cpp" line="276" />

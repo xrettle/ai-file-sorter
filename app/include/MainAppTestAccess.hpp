@@ -57,11 +57,29 @@ public:
      */
     static QAction* clear_cache_action(MainApp& app);
     /**
+     * @brief Access the Settings -> Reset learned behavior action.
+     * @param app MainApp instance.
+     * @return Pointer to the action, or nullptr if unavailable.
+     */
+    static QAction* reset_learning_action(MainApp& app);
+    /**
      * @brief Access the Settings menu.
      * @param app MainApp instance.
      * @return Pointer to the Settings menu, or nullptr if unavailable.
      */
     static QMenu* settings_menu(MainApp& app);
+    /**
+     * @brief Access the development-only Plugins menu.
+     * @param app MainApp instance.
+     * @return Pointer to the Plugins menu, or nullptr if hidden.
+     */
+    static QMenu* plugins_menu(MainApp& app);
+    /**
+     * @brief Access the development-only storage plugin management action.
+     * @param app MainApp instance.
+     * @return Pointer to the action, or nullptr if hidden.
+     */
+    static QAction* manage_storage_plugins_action(MainApp& app);
     /**
      * @brief Access the \"Categorize files\" checkbox.
      * @param app MainApp instance.

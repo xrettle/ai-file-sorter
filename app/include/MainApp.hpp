@@ -14,6 +14,7 @@
 #include "WhitelistStore.hpp"
 #include "UiTranslator.hpp"
 #include "UndoManager.hpp"
+#include "UserLearningStore.hpp"
 
 #include <QCoreApplication>
 #include <QMainWindow>
@@ -181,6 +182,10 @@ private:
     void on_language_selected(Language language);
     void on_category_language_selected(CategoryLanguage language);
     void initialize_whitelists();
+    /**
+     * @brief Imports current whitelist labels into the separate user-learning database.
+     */
+    void sync_whitelists_to_learning_store();
 
     void on_analyze_clicked();
     void on_directory_selected(const QString& path,
@@ -263,6 +268,10 @@ private:
      */
     void show_cache_cleanup_dialog();
     /**
+     * @brief Confirms and resets locally learned categorization behavior.
+     */
+    void reset_learned_behavior();
+    /**
      * @brief Enables or disables Settings actions that should not run during analysis.
      */
     void update_settings_action_states();
@@ -298,6 +307,7 @@ private:
 
     Settings& settings;
     DatabaseManager db_manager;
+    UserLearningStore user_learning_store_;
     bool using_local_llm{false};
 
     std::vector<CategorizedFile> already_categorized_files;
@@ -368,6 +378,7 @@ private:
     QAction* toggle_llm_action{nullptr};
     QAction* manage_storage_plugins_action{nullptr};
     QAction* manage_whitelists_action{nullptr};
+    QAction* reset_learning_action{nullptr};
     QAction* clear_cache_action{nullptr};
     QAction* development_prompt_logging_action{nullptr};
     QAction* consistency_pass_action{nullptr};

@@ -409,12 +409,13 @@ MainApp::MainApp(Settings& settings, bool development_mode, QWidget* parent)
     : QMainWindow(parent),
       settings(settings),
       db_manager(settings.get_config_dir()),
+      user_learning_store_(settings.get_config_dir()),
       core_logger(Logger::get_logger("core_logger")),
       ui_logger(Logger::get_logger("ui_logger")),
       whitelist_store(settings.get_config_dir()),
       storage_plugin_manager_(std::make_shared<StoragePluginManager>(settings.get_config_dir())),
       storage_plugin_loader_(StoragePluginManager::manifest_directory_for_config_dir(settings.get_config_dir())),
-      categorization_service(settings, db_manager, core_logger),
+      categorization_service(settings, db_manager, core_logger, &user_learning_store_),
       consistency_pass_service(db_manager, core_logger),
       storage_provider_registry_(),
       active_storage_provider_(std::make_shared<LocalFsProvider>()),
@@ -751,6 +752,9 @@ void MainApp::retranslate_ui()
 
 void MainApp::update_settings_action_states()
 {
+    if (reset_learning_action) {
+        reset_learning_action->setEnabled(!analysis_in_progress_);
+    }
     if (clear_cache_action) {
         clear_cache_action->setEnabled(!analysis_in_progress_);
     }
@@ -964,6 +968,7 @@ void MainApp::show_whitelist_manager()
             whitelist_store.load();
             whitelist_store.save();
             apply_whitelist_to_selector();
+            sync_whitelists_to_learning_store();
         });
     }
     whitelist_dialog->show();
@@ -974,6 +979,42 @@ void MainApp::show_whitelist_manager()
 void MainApp::initialize_whitelists()
 {
     whitelist_store.initialize_from_settings(settings);
+    sync_whitelists_to_learning_store();
+}
+
+void MainApp::sync_whitelists_to_learning_store()
+{
+    if (!user_learning_store_.is_open()) {
+        return;
+    }
+
+    std::vector<UserLearningStore::TaxonomyCandidate> candidates;
+    for (const auto& name : whitelist_store.list_names()) {
+        const auto entry = whitelist_store.get(name);
+        if (!entry) {
+            continue;
+        }
+        candidates.reserve(candidates.size() + entry->categories.size());
+        const std::string source = "whitelist:" + name;
+        for (const auto& category : entry->categories) {
+            candidates.push_back(UserLearningStore::TaxonomyCandidate{
+                category,
+                std::string(),
+                source
+            });
+        }
+    }
+
+    if (candidates.empty()) {
+        return;
+    }
+
+    std::string error;
+    if (!user_learning_store_.import_taxonomy_candidates(candidates, &error)) {
+        if (core_logger) {
+            core_logger->warn("Failed to import whitelist taxonomy into user learning store: {}", error);
+        }
+    }
 }
 
 bool MainApp::ensure_folder_categorization_style(const std::string& folder_path)
@@ -1971,6 +2012,41 @@ void MainApp::show_cache_cleanup_dialog()
     dialog.exec();
 }
 
+void MainApp::reset_learned_behavior()
+{
+    if (analysis_in_progress_) {
+        return;
+    }
+
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(tr("Reset learned behavior?"));
+    box.setText(tr("This removes category examples learned from your approved reviews. "
+                   "It does not clear ordinary caches or touch your files."));
+    box.setInformativeText(tr("Current whitelists will be re-imported afterwards so selected whitelists still work."));
+    QPushButton* reset_button = box.addButton(tr("Reset"), QMessageBox::DestructiveRole);
+    box.addButton(QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Cancel);
+    box.exec();
+    if (box.clickedButton() != reset_button) {
+        return;
+    }
+
+    std::string error;
+    if (!user_learning_store_.clear_all(&error)) {
+        QMessageBox::warning(this,
+                             tr("Reset learned behavior?"),
+                             tr("Failed to reset learned behavior: %1")
+                                 .arg(QString::fromStdString(error)));
+        return;
+    }
+
+    sync_whitelists_to_learning_store();
+    QMessageBox::information(this,
+                             tr("Reset learned behavior?"),
+                             tr("Learned behavior reset. Current whitelists remain configured."));
+}
+
 void MainApp::show_suitability_benchmark_dialog(bool /*auto_start*/)
 {
     if (benchmark_dialog) {
@@ -2164,7 +2240,8 @@ void MainApp::show_results_dialog(const std::vector<CategorizedFile>& results)
                                                                        show_subcategory,
                                                                        undo_dir,
                                                                        settings.get_category_language(),
-                                                                       this);
+                                                                       this,
+                                                                       &user_learning_store_);
         categorization_dialog->show_results(results,
                                             get_folder_path(),
                                             settings.get_include_subdirectories(),

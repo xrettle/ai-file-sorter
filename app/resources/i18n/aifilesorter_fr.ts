@@ -1112,6 +1112,30 @@ Veuillez ouvrir ce lien manuellement :
             <source>[WARN] %1 will be re-categorized: %2</source>
             <translation>[AVERTISSEMENT] %1 sera recatégorisé : %2</translation>
         </message>
+        <message>
+            <source>Reset learned behavior?</source>
+            <translation>Réinitialiser le comportement appris ?</translation>
+        </message>
+        <message>
+            <source>This removes category examples learned from your approved reviews. It does not clear ordinary caches or touch your files.</source>
+            <translation>Cette opération supprime les exemples de catégories appris à partir de vos validations. Elle ne vide pas les caches ordinaires et ne touche pas à vos fichiers.</translation>
+        </message>
+        <message>
+            <source>Current whitelists will be re-imported afterwards so selected whitelists still work.</source>
+            <translation>Les listes blanches actuelles seront réimportées ensuite afin que les listes sélectionnées continuent de fonctionner.</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>Réinitialiser</translation>
+        </message>
+        <message>
+            <source>Failed to reset learned behavior: %1</source>
+            <translation>Échec de la réinitialisation du comportement appris : %1</translation>
+        </message>
+        <message>
+            <source>Learned behavior reset. Current whitelists remain configured.</source>
+            <translation>Le comportement appris a été réinitialisé. Les listes blanches actuelles restent configurées.</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -2088,6 +2112,10 @@ Tentatives :
             <location filename="../../lib/UiTranslator.cpp" line="261" />
             <source>&amp;FAQ</source>
             <translation>&amp;FAQ</translation>
+        </message>
+        <message>
+            <source>Reset learned behavior…</source>
+            <translation>Réinitialiser le comportement appris…</translation>
         </message>
         <message>
             <location filename="../../lib/UiTranslator.cpp" line="276" />

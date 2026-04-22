@@ -1112,6 +1112,30 @@ Please open this link manually:
             <source>[WARN] %1 will be re-categorized: %2</source>
             <translation>[WARN] %1 재분류 예정: %2</translation>
         </message>
+        <message>
+            <source>Reset learned behavior?</source>
+            <translation>학습된 동작을 재설정할까요?</translation>
+        </message>
+        <message>
+            <source>This removes category examples learned from your approved reviews. It does not clear ordinary caches or touch your files.</source>
+            <translation>승인한 검토에서 학습된 카테고리 예시가 삭제됩니다. 일반 캐시는 지우지 않으며 파일은 건드리지 않습니다.</translation>
+        </message>
+        <message>
+            <source>Current whitelists will be re-imported afterwards so selected whitelists still work.</source>
+            <translation>선택한 화이트리스트가 계속 작동하도록 현재 화이트리스트를 다시 가져옵니다.</translation>
+        </message>
+        <message>
+            <source>Reset</source>
+            <translation>재설정</translation>
+        </message>
+        <message>
+            <source>Failed to reset learned behavior: %1</source>
+            <translation>학습된 동작을 재설정하지 못했습니다: %1</translation>
+        </message>
+        <message>
+            <source>Learned behavior reset. Current whitelists remain configured.</source>
+            <translation>학습된 동작이 재설정되었습니다. 현재 화이트리스트 설정은 유지됩니다.</translation>
+        </message>
     </context>
     <context>
         <name>QObject</name>
@@ -2088,6 +2112,10 @@ Tried:
             <location filename="../../lib/UiTranslator.cpp" line="261" />
             <source>&amp;FAQ</source>
             <translation>&amp;FAQ</translation>
+        </message>
+        <message>
+            <source>Reset learned behavior…</source>
+            <translation>학습된 동작 재설정…</translation>
         </message>
         <message>
             <location filename="../../lib/UiTranslator.cpp" line="276" />

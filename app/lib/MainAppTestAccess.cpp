@@ -28,9 +28,24 @@ QAction* MainAppTestAccess::clear_cache_action(MainApp& app)
     return app.clear_cache_action;
 }
 
+QAction* MainAppTestAccess::reset_learning_action(MainApp& app)
+{
+    return app.reset_learning_action;
+}
+
 QMenu* MainAppTestAccess::settings_menu(MainApp& app)
 {
     return app.settings_menu;
+}
+
+QMenu* MainAppTestAccess::plugins_menu(MainApp& app)
+{
+    return app.plugins_menu;
+}
+
+QAction* MainAppTestAccess::manage_storage_plugins_action(MainApp& app)
+{
+    return app.manage_storage_plugins_action;
 }
 
 QCheckBox* MainAppTestAccess::categorize_files_checkbox(MainApp& app) {

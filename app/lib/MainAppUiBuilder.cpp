@@ -574,6 +574,7 @@ UiTranslator::Dependencies MainAppUiBuilder::build_translator_dependencies(MainA
             app.toggle_llm_action,
             app.manage_storage_plugins_action,
             app.manage_whitelists_action,
+            app.reset_learning_action,
             app.clear_cache_action,
             app.development_prompt_logging_action,
             app.consistency_pass_action,
@@ -633,8 +634,8 @@ void MainAppUiBuilder::build_menus(MainApp& app) {
     build_edit_menu(app);
     build_view_menu(app);
     build_settings_menu(app);
-    build_plugins_menu(app);
     if (app.is_development_mode()) {
+        build_plugins_menu(app);
         build_development_menu(app);
     }
     build_help_menu(app);
@@ -792,6 +793,14 @@ void MainAppUiBuilder::build_settings_menu(MainApp& app) {
     });
 
     app.settings_menu->addSeparator();
+    app.reset_learning_action = app.settings_menu->addAction(
+        icon_for(app, "edit-clear-history", QStyle::SP_BrowserReload),
+        QString());
+    QObject::connect(app.reset_learning_action,
+                     &QAction::triggered,
+                     &app,
+                     &MainApp::reset_learned_behavior);
+
     app.clear_cache_action = app.settings_menu->addAction(
         icon_for(app, "edit-clear", QStyle::SP_TrashIcon),
         QString());
