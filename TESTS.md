@@ -93,14 +93,14 @@ Run: `./build-tests/ai_file_sorter_tests "Vulkan backend reports low GPU memory 
 
 #### Test case: SingleInstanceCoordinator notifies the primary instance on relaunch
 Purpose: Verify that a second launch notifies the already running primary process instead of becoming a second app instance.
-Setup: Create a unique logical instance id, start one coordinator as the primary instance, and install an activation callback on it.
-Procedure: Start a second coordinator with the same instance id and wait for the primary callback to fire.
-Expected outcome: The second coordinator reports that it is not primary, and the first coordinator receives exactly the relaunch activation request.
+Setup: Create a writable temporary runtime directory, point `AI_FILE_SORTER_SINGLE_INSTANCE_RUNTIME_DIR` at it, start one coordinator as the primary instance, and install an activation callback on it.
+Procedure: Verify local socket binding is available, then start a second coordinator with the same instance id and wait for the primary callback to fire.
+Expected outcome: When local sockets are available, the second coordinator reports that it is not primary and the first coordinator receives exactly the relaunch activation request. If the sandbox cannot bind local sockets, the test records that the activation handoff is skipped.
 Run: `./build-tests/ai_file_sorter_tests "SingleInstanceCoordinator notifies the primary instance on relaunch"`
 
 #### Test case: SingleInstanceCoordinator allows different instance ids to coexist
 Purpose: Ensure the coordinator only deduplicates launches that share the same logical app id.
-Setup: Create two coordinators with different unique instance ids.
+Setup: Create a writable temporary runtime directory, point `AI_FILE_SORTER_SINGLE_INSTANCE_RUNTIME_DIR` at it, and create two coordinators with different unique instance ids.
 Procedure: Acquire the primary-instance lock for both coordinators.
 Expected outcome: Both coordinators become primary because they represent different logical applications.
 Run: `./build-tests/ai_file_sorter_tests "SingleInstanceCoordinator allows different instance ids to coexist"`
@@ -109,17 +109,45 @@ Run: `./build-tests/ai_file_sorter_tests "SingleInstanceCoordinator allows diffe
 
 #### Test case: Image analysis checkboxes enable and enforce rename-only behavior
 Purpose: Ensure the image analysis options enable correctly and enforce the rename-only rule.
-Setup: Create dummy LLaVA model files, configure settings with image analysis and rename options off, and construct `MainApp` with offscreen Qt.
+Setup: Create dummy LLaVA model files, configure settings with image analysis and rename options off, construct `MainApp` with offscreen Qt, and stub the visual-LLM availability probe.
 Procedure: Toggle the "Analyze picture files" checkbox on, then toggle the "Do not categorize picture files" checkbox on and attempt to unset "Offer to rename picture files".
 Expected outcome: The option group enables when analysis is checked; enabling rename-only forces offer-rename on; disabling offer-rename clears rename-only.
 Run: `./build-tests/ai_file_sorter_tests "Image analysis checkboxes enable and enforce rename-only behavior"`
 
+#### Test case: Top-level analysis rows share the same leading edge
+Purpose: Verify that top-level analysis controls align consistently in the main window.
+Setup: Build `MainApp` with offscreen Qt and show the window so widget geometry is calculated.
+Procedure: Compare the x-coordinate of the document analysis, image analysis, and audio/video metadata controls.
+Expected outcome: All top-level analysis rows share the same leading edge.
+Run: `./build-tests/ai_file_sorter_tests "Top-level analysis rows share the same leading edge"`
+
+#### Test case: Analysis toggles use disclosure indicators instead of toolbutton arrows
+Purpose: Ensure the image and document option groups use the app's custom disclosure styling.
+Setup: Build `MainApp` with offscreen Qt.
+Procedure: Inspect the image and document option toggle buttons through the test access layer.
+Expected outcome: Both toggles are checkable and use `Qt::NoArrow`, leaving the visible indicator to the styled label.
+Run: `./build-tests/ai_file_sorter_tests "Analysis toggles use disclosure indicators instead of toolbutton arrows"`
+
 #### Test case: Image rename-only does not disable categorization unless processing images only
 Purpose: Confirm that rename-only for images does not disable file categorization by itself.
-Setup: Initialize settings with image analysis off and build `MainApp` with offscreen Qt.
+Setup: Initialize settings with image analysis off, build `MainApp` with offscreen Qt, and stub the visual-LLM availability probe.
 Procedure: Enable image analysis and rename-only, then check whether "Categorize files" remains enabled. Next, enable "Process picture files only".
 Expected outcome: Categorization remains enabled with rename-only, but becomes disabled when processing images only.
 Run: `./build-tests/ai_file_sorter_tests "Image rename-only does not disable categorization unless processing images only"`
+
+#### Test case: Processing images only disables document analysis controls and audio-video metadata
+Purpose: Confirm image-only processing temporarily disables controls that would analyze non-image content.
+Setup: Enable image analysis, document analysis, and audio/video metadata in settings, then build `MainApp` with offscreen Qt.
+Procedure: Enable "Process picture files only", inspect dependent controls, then disable it again.
+Expected outcome: Document analysis controls and audio/video metadata are disabled while image-only mode is active, but the underlying saved settings are preserved and controls re-enable afterward.
+Run: `./build-tests/ai_file_sorter_tests "Processing images only disables document analysis controls and audio-video metadata"`
+
+#### Test case: Processing images only preserves recursive scanning when scan subfolders is enabled
+Purpose: Ensure image-only processing does not accidentally clear recursive scanning.
+Setup: Enable image analysis, image-only processing, and include-subdirectories in settings.
+Procedure: Build `MainApp` and read the effective scan options through the test access layer.
+Expected outcome: The effective options include both `Files` and `Recursive`.
+Run: `./build-tests/ai_file_sorter_tests "Processing images only preserves recursive scanning when scan subfolders is enabled"`
 
 #### Test case: Document rename-only does not disable categorization unless processing documents only
 Purpose: Mirror the image-only behavior for documents.
@@ -158,12 +186,19 @@ Run: `./build-tests/ai_file_sorter_tests "Already-renamed images skip vision ana
 
 ### `tests/unit/test_main_app_cache_action.cpp` (non-Windows only)
 
-#### Test case: Settings clear cache action stays last and follows analysis state
-Purpose: Ensure the new Settings menu entry remains the bottom-most action and is disabled while analysis is active.
+#### Test case: Settings maintenance actions stay separate and follow analysis state
+Purpose: Ensure learned-behavior reset and cache clearing are separate Settings actions and disabled while analysis is active.
 Setup: Build `MainApp` with offscreen Qt using a temporary config directory.
 Procedure: Read the Settings menu action order, then toggle the analysis-in-progress state through the test access layer.
-Expected outcome: The `Clear cache…` action is the last Settings entry, starts enabled, becomes disabled during analysis, and re-enables afterward.
-Run: `./build-tests/ai_file_sorter_tests "Settings clear cache action stays last and follows analysis state"`
+Expected outcome: `Reset learned behavior…` appears before `Clear cache…`, both actions start enabled, both become disabled during analysis, and both re-enable afterward.
+Run: `./build-tests/ai_file_sorter_tests "Settings maintenance actions stay separate and follow analysis state"`
+
+#### Test case: Plugins menu is only available in development mode
+Purpose: Ensure unfinished plugin UI is hidden for public builds while remaining available for developer testing.
+Setup: Build one `MainApp` with development mode disabled and one with development mode enabled.
+Procedure: Inspect the Plugins menu and Manage Storage Plugins action through the test access layer.
+Expected outcome: Public mode exposes neither item; development mode exposes both and the Plugins menu is visible.
+Run: `./build-tests/ai_file_sorter_tests "Plugins menu is only available in development mode"`
 
 ### `tests/unit/test_ui_translator.cpp` (non-Windows only)
 
@@ -171,7 +206,7 @@ Run: `./build-tests/ai_file_sorter_tests "Settings clear cache action stays last
 Purpose: Validate that the UI translator updates all primary controls, menus, and stateful labels in a consistent pass.
 Setup: Build a test harness with a `QMainWindow`, many UI controls, and a translator state set to French in settings. Use a translation function that returns the input string to test label wiring rather than actual translation files.
 Procedure: Call `retranslate_all()` and verify the text of buttons, checkboxes, menus, status labels, and the file explorer dock title. Also verify the language action group selection.
-Expected outcome: All UI elements show the expected English strings, including the new `Clear cache…` Settings action, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
+Expected outcome: All UI elements show the expected English strings, including the `Reset learned behavior…` and `Clear cache…` Settings actions, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
 Run: `./build-tests/ai_file_sorter_tests "*UiTranslator updates menus*"`
 
 ### `tests/unit/test_cache_maintenance_service.cpp`
@@ -203,6 +238,78 @@ Setup: Create a real empty `file_categorization` SQLite database on disk and vac
 Procedure: Query the categorization target through `target_info()`.
 Expected outcome: The target still exists on disk, but the reported reclaimable size is `0`, reflecting that no cached categorization rows remain.
 Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceService reports zero size for an empty categorization database"`
+
+### `tests/unit/test_user_learning_store.cpp`
+
+#### Test case: UserLearningStore records approved mappings in a separate database
+Purpose: Verify user-approved categorization behavior is persisted outside disposable categorization caches.
+Setup: Create a temporary config directory and open `UserLearningStore`.
+Procedure: Record an approved mapping, then query the learned taxonomy entry and approved examples.
+Expected outcome: The store creates a separate learning database, records the taxonomy entry, and links one approved example to it.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore records approved mappings in a separate database"`
+
+#### Test case: UserLearningStore updates repeated approvals without duplicating examples
+Purpose: Ensure repeated approval for the same file key updates the learned mapping instead of growing duplicate examples.
+Setup: Create a learning store and record one approved mapping for a file.
+Procedure: Record another mapping for the same file key with a different approved category/subcategory.
+Expected outcome: The example count remains one, the old taxonomy entry count is refreshed, and the example points at the latest approved taxonomy entry.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore updates repeated approvals without duplicating examples"`
+
+#### Test case: UserLearningStore imports whitelist taxonomy candidates without duplicating entries
+Purpose: Seed the learning database from whitelist taxonomy labels without creating approved file examples.
+Setup: Create a learning store and prepare repeated whitelist candidates, including a Unicode label.
+Procedure: Import the candidates twice and inspect learned taxonomy entries.
+Expected outcome: Duplicate candidates are collapsed, Unicode labels are preserved, and approved example count remains zero.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore imports whitelist taxonomy candidates without duplicating entries"`
+
+#### Test case: UserLearningStore stores embeddings for imported taxonomy candidates
+Purpose: Verify user taxonomy entries receive persisted embedding vectors immediately after import.
+Setup: Import a taxonomy candidate into a fresh learning store.
+Procedure: Load the taxonomy entry's embedding record.
+Expected outcome: The embedding uses the active local model id, expected dimension, non-empty source hash, and is counted in the learning database.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore stores embeddings for imported taxonomy candidates"`
+
+#### Test case: UserLearningStore preserves review-confirmed taxonomy source during whitelist import
+Purpose: Ensure later whitelist imports do not downgrade a category that was explicitly confirmed by the user.
+Setup: Import a whitelist candidate, then record an approved mapping for the same category.
+Procedure: Import the same whitelist candidate again and inspect the learned taxonomy entry.
+Expected outcome: The taxonomy entry keeps source `review_confirmed`, retains its approved example count, and is not duplicated.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore preserves review-confirmed taxonomy source during whitelist import"`
+
+#### Test case: UserLearningStore refreshes embeddings when approved examples change
+Purpose: Ensure stored embeddings track the latest approved example context for a taxonomy entry.
+Setup: Record an approved mapping with context text.
+Procedure: Capture the stored embedding hash, update the same file approval with different context text, and reload the embedding.
+Expected outcome: The embedding source hash changes while the vector shape remains stable.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore refreshes embeddings when approved examples change"`
+
+#### Test case: UserLearningStore retrieves relevant taxonomy candidates from learned examples
+Purpose: Verify learned examples can be ranked into candidate categories for future prompts.
+Setup: Record an approved manual mapping with filename/context terms and import an unrelated spreadsheet candidate.
+Procedure: Retrieve candidates for a camera manual query.
+Expected outcome: The manual taxonomy entry is returned first with a positive score and its approved example count.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore retrieves relevant taxonomy candidates from learned examples"`
+
+#### Test case: UserLearningStore uses stored embeddings during candidate retrieval
+Purpose: Confirm retrieval can use persisted taxonomy embeddings, not only lexical scoring.
+Setup: Record a camera-manual approval and import an unrelated spreadsheet candidate.
+Procedure: Retrieve candidates for camera-related terms.
+Expected outcome: The manual candidate is ranked first and reports that embedding similarity contributed.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore uses stored embeddings during candidate retrieval"`
+
+#### Test case: UserLearningStore clears learned behavior while keeping the database reusable
+Purpose: Verify explicit learned-behavior reset removes learning data without deleting or corrupting the learning database.
+Setup: Record an approved mapping and import a whitelist taxonomy candidate.
+Procedure: Clear the learning store, inspect counts, then import a taxonomy candidate again.
+Expected outcome: Learned entries, examples, aliases, and embeddings are removed, the database file remains usable, and later imports succeed.
+Run: `./build-tests/ai_file_sorter_tests "UserLearningStore clears learned behavior while keeping the database reusable"`
+
+#### Test case: CacheMaintenanceService does not remove learned user behavior with categorization cache
+Purpose: Protect user-owned learned behavior from the normal cache-clearing workflow.
+Setup: Create both a categorization cache database and a separate user-learning database in a temporary config directory.
+Procedure: Clear the categorization cache through `CacheMaintenanceService`.
+Expected outcome: The categorization cache is removed or emptied, while `user_learning.db` remains present with the learned example intact.
+Run: `./build-tests/ai_file_sorter_tests "CacheMaintenanceService does not remove learned user behavior with categorization cache"`
 
 ### `tests/unit/test_cache_maintenance_dialog.cpp` (non-Windows only)
 
@@ -257,26 +364,33 @@ Procedure: Call `Utils::sanitize_path_label()`.
 Expected outcome: The invalid byte is removed and the returned label remains valid UTF-8 text.
 Run: `./build-tests/ai_file_sorter_tests "sanitize_path_label strips invalid UTF-8 bytes"`
 
+#### Test case: sanitize_path_label preserves valid Unicode emoji labels
+Purpose: Confirm valid Unicode labels are not stripped while sanitizing invalid path text.
+Setup: Build a UTF-8 label containing a cloud emoji.
+Procedure: Call `Utils::sanitize_path_label()`.
+Expected outcome: The returned label exactly preserves the valid emoji-containing text.
+Run: `./build-tests/ai_file_sorter_tests "sanitize_path_label preserves valid Unicode emoji labels"`
+
 ### `tests/unit/test_llm_selection_dialog_visual.cpp` (non-Windows only)
 
 #### Test case: Visual model entry shows missing env var state
-Purpose: Confirm UI indicates missing download URLs for the active visual backend.
-Setup: Clear `LLAVA_MODEL_URL` and `LLAVA_MMPROJ_URL` and construct the dialog.
-Procedure: Fetch the default visual-model entry via test access.
+Purpose: Confirm UI indicates missing download URLs for the selected legacy LLaVA visual backend.
+Setup: Select the legacy LLaVA backend, clear `LLAVA_MODEL_URL` and `LLAVA_MMPROJ_URL`, and construct the dialog.
+Procedure: Fetch the active visual-model entry via test access.
 Expected outcome: The status label reports the missing environment variable and the download button is disabled.
 Run: `./build-tests/ai_file_sorter_tests "Visual model entry shows missing env var state"`
 
 #### Test case: Visual model entry shows resume state for partial downloads
-Purpose: Validate resume state for partial visual-model downloads.
-Setup: Create a fake source file and a smaller destination file, inject metadata headers with an expected size.
-Procedure: Update the default visual-model entry state.
+Purpose: Validate resume state for partial legacy LLaVA visual-model downloads.
+Setup: Select the legacy LLaVA backend, create a fake source file and a smaller destination file, and inject metadata headers with an expected size.
+Procedure: Update the active visual-model entry state.
 Expected outcome: The status label indicates a partial download and the download button changes to "Resume download" and is enabled.
 Run: `./build-tests/ai_file_sorter_tests "Visual model entry shows resume state for partial downloads"`
 
 #### Test case: Visual model entry reports download errors
 Purpose: Ensure download failures are surfaced in the UI.
-Setup: Inject a network-available override and a download probe that returns a CURL connection error.
-Procedure: Start the default visual-model download and wait for the label to update.
+Setup: Select the legacy LLaVA backend, inject a network-available override, and inject a download probe that returns a CURL connection error.
+Procedure: Start the active visual-model download and wait for the label to update.
 Expected outcome: The status label begins with "Download error:" indicating the failure is shown to the user.
 Run: `./build-tests/ai_file_sorter_tests "Visual model entry reports download errors"`
 
@@ -293,6 +407,20 @@ Setup: Construct the dialog with default settings on a clean config directory.
 Procedure: Read the selected visual backend id and the current combo-box label through the test access layer.
 Expected outcome: The selected backend id is `gemma-3-4b-it`, and the visible combo label is `Gemma 3 4B IT (Recommended)`.
 Run: `./build-tests/ai_file_sorter_tests "Visual dialog defaults to recommended Gemma backend"`
+
+#### Test case: Visual dialog does not mark another backend's legacy generic mmproj as downloaded
+Purpose: Ensure generic legacy mmproj filenames are not attributed to the wrong visual backend.
+Setup: Configure a non-LLaVA backend and place a legacy generic mmproj artifact that belongs to a different backend.
+Procedure: Build the dialog and inspect the selected backend download state.
+Expected outcome: The selected backend does not report complete just because another backend's generic mmproj file exists.
+Run: `./build-tests/ai_file_sorter_tests "Visual dialog does not mark another backend's legacy generic mmproj as downloaded"`
+
+#### Test case: Visual dialog accepts the legacy LLaVA generic mmproj without metadata
+Purpose: Preserve compatibility with existing LLaVA downloads that predate sidecar metadata.
+Setup: Select the legacy LLaVA backend and create the older generic mmproj file without metadata.
+Procedure: Build the dialog and inspect the active visual-model entry.
+Expected outcome: The LLaVA entry treats the legacy generic mmproj as available.
+Run: `./build-tests/ai_file_sorter_tests "Visual dialog accepts the legacy LLaVA generic mmproj without metadata"`
 
 ### `tests/unit/test_visual_llm_runtime.cpp`
 
@@ -559,6 +687,13 @@ Procedure: Call `remove_empty_categorizations()` and then fetch categorized file
 Expected outcome: Only the truly empty entry is removed; the rename-only entry remains with empty category labels and the suggestion intact.
 Run: `./build-tests/ai_file_sorter_tests "DatabaseManager keeps rename-only entries with empty labels"`
 
+#### Test case: DatabaseManager keeps suggestion-only entries with empty labels
+Purpose: Ensure entries that only contain a suggested filename are retained for later review.
+Setup: Insert a suggestion-only entry with empty category labels and another truly empty entry.
+Procedure: Call `remove_empty_categorizations()` and then fetch categorized files.
+Expected outcome: The suggestion-only row remains, while the truly empty row is removed.
+Run: `./build-tests/ai_file_sorter_tests "DatabaseManager keeps suggestion-only entries with empty labels"`
+
 #### Test case: DatabaseManager sanitizes invalid UTF-8 in cached labels
 Purpose: Ensure malformed UTF-8 in cached category labels or suggestions does not propagate into the review dialog pipeline.
 Setup: Insert a cached entry whose category, subcategory, and suggested filename contain invalid UTF-8 bytes.
@@ -573,12 +708,12 @@ Procedure: Compare the resolved taxonomy IDs and labels.
 Expected outcome: Both resolutions share the same taxonomy ID and normalized labels, while unrelated subcategories (e.g., "Photos") remain unchanged.
 Run: `./build-tests/ai_file_sorter_tests "DatabaseManager normalizes subcategory stopword suffixes for taxonomy matching"`
 
-#### Test case: DatabaseManager normalizes backup category synonyms for taxonomy matching
-Purpose: Ensure backup/archive category variants collapse to a single canonical taxonomy entry.
+#### Test case: DatabaseManager preserves the Backups family under archive-like labels
+Purpose: Ensure archive-like labels resolve to a stable backups semantic family instead of being flattened into generic archives.
 Setup: Resolve `Archives` and `backup files` with the same subcategory.
 Procedure: Compare taxonomy IDs and canonical labels.
-Expected outcome: Both labels map to the same taxonomy entry with canonical category `Archives`.
-Run: `./build-tests/ai_file_sorter_tests "DatabaseManager normalizes backup category synonyms for taxonomy matching"`
+Expected outcome: Both labels map to the same taxonomy entry with canonical category `Backups`.
+Run: `./build-tests/ai_file_sorter_tests "DatabaseManager preserves the Backups family under archive-like labels"`
 
 #### Test case: DatabaseManager normalizes image category synonyms and image media aliases
 Purpose: Ensure image-related category variants collapse while non-image media remains distinct.
@@ -594,12 +729,33 @@ Procedure: Compare taxonomy IDs and canonical labels.
 Expected outcome: All variants map to the same taxonomy entry with canonical category `Documents`.
 Run: `./build-tests/ai_file_sorter_tests "DatabaseManager normalizes document category synonyms for taxonomy matching"`
 
-#### Test case: DatabaseManager normalizes installer and update category synonyms for taxonomy matching
-Purpose: Ensure software/install/update category variants collapse to `Software`.
+#### Test case: DatabaseManager normalizes generic Documents labels into preserved document families when the subcategory is explicit
+Purpose: Keep specialized document-family labels consistent even when the model returns generic `Documents` as the category.
+Setup: Resolve generic `Documents` labels with explicit subcategories such as manuals, spreadsheets, and presentations.
+Procedure: Compare taxonomy IDs and canonical labels.
+Expected outcome: The resolved category preserves the intended semantic family, such as `Manuals`, `Spreadsheets`, or `Presentations`.
+Run: `./build-tests/ai_file_sorter_tests "DatabaseManager normalizes generic Documents labels into preserved document families when the subcategory is explicit"`
+
+#### Test case: DatabaseManager keeps specialized document-family categories and normalizes generic subcategories
+Purpose: Preserve specialized document categories while cleaning generic or redundant subcategory labels.
+Setup: Resolve specialized categories such as `Manuals` and `Spreadsheets` with generic subcategory text.
+Procedure: Compare resolved taxonomy labels.
+Expected outcome: Specialized categories remain specialized, and generic subcategory values are normalized to useful labels.
+Run: `./build-tests/ai_file_sorter_tests "DatabaseManager keeps specialized document-family categories and normalizes generic subcategories"`
+
+#### Test case: DatabaseManager preserves the Installers family under software-like labels
+Purpose: Keep installer/update semantics distinct from generic software labels.
 Setup: Resolve `Software`, `Installers`, `Setup files`, `Software Update`, and `Patches`.
 Procedure: Compare taxonomy IDs and canonical labels.
-Expected outcome: All variants map to the same taxonomy entry with canonical category `Software`.
-Run: `./build-tests/ai_file_sorter_tests "DatabaseManager normalizes installer and update category synonyms for taxonomy matching"`
+Expected outcome: Installer/update-like labels map to the `Installers` family where appropriate instead of always flattening to `Software`.
+Run: `./build-tests/ai_file_sorter_tests "DatabaseManager preserves the Installers family under software-like labels"`
+
+#### Test case: DatabaseManager keeps non-family software semantics under Software
+Purpose: Ensure software labels that are not installer/update semantics remain generic software.
+Setup: Resolve non-installer software categories and subcategories.
+Procedure: Compare resolved taxonomy labels.
+Expected outcome: Non-family software semantics remain under canonical category `Software`.
+Run: `./build-tests/ai_file_sorter_tests "DatabaseManager keeps non-family software semantics under Software"`
 
 ### `tests/unit/test_file_scanner.cpp`
 
@@ -693,6 +849,20 @@ Procedure: Confirm the rename, undo it, and confirm again.
 Expected outcome: Each confirm applies the rename, and undo restores the original filename for a second rename.
 Run: `./build-tests/ai_file_sorter_tests "CategorizationDialog undo allows renaming again"`
 
+#### Test case: UndoManager restores saved plans through the active storage provider
+Purpose: Verify persisted undo plans can be replayed through the storage provider abstraction.
+Setup: Create a saved move plan and attach a storage provider that records undo calls.
+Procedure: Load and execute the undo plan.
+Expected outcome: The provider receives the expected restore request and the plan is consumed successfully.
+Run: `./build-tests/ai_file_sorter_tests "UndoManager restores saved plans through the active storage provider"`
+
+#### Test case: UndoManager relaxes timestamp validation for cloud providers
+Purpose: Allow cloud-backed providers to restore moves when timestamp metadata is less reliable.
+Setup: Create a saved cloud-provider move plan with timestamp differences that would fail strict local validation.
+Procedure: Execute the undo flow through the active provider.
+Expected outcome: The undo succeeds despite timestamp drift because provider identity metadata is trusted.
+Run: `./build-tests/ai_file_sorter_tests "UndoManager relaxes timestamp validation for cloud providers"`
+
 #### Test case: CategorizationDialog rename-only updates cached filename
 Purpose: Verify database updates when a rename-only action occurs.
 Setup: Use a dialog with a database manager and a rename-only file with a suggestion.
@@ -763,6 +933,13 @@ Procedure: Confirm the dialog and query the cache for the renamed file.
 Expected outcome: The renamed entry retains the cached category and subcategory with rename-only metadata.
 Run: `./build-tests/ai_file_sorter_tests "CategorizationDialog rename-only preserves cached categories when renaming"`
 
+#### Test case: CategorizationDialog records confirmed categories as learned behavior
+Purpose: Ensure user-approved review decisions are copied into the dedicated learning store.
+Setup: Create a dialog with a categorization cache, a user-learning store, and a confirmed categorized file.
+Procedure: Trigger confirmation and inspect the learning database.
+Expected outcome: The approved category/subcategory and analysis context are stored as learned behavior with the file example attached.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationDialog records confirmed categories as learned behavior"`
+
 ### `tests/unit/test_main_app_translation.cpp` (non-Windows only)
 
 #### Test case: MainApp retranslate reflects language changes
@@ -772,7 +949,42 @@ Procedure: Iterate through supported languages, set the language, trigger a retr
 Expected outcome: Each language produces the exact expected translations for the two labels.
 Run: `./build-tests/ai_file_sorter_tests "MainApp retranslate reflects language changes"`
 
+#### Test case: Updater strings are translated for all supported UI languages
+Purpose: Verify updater and installer UI text exists across supported languages.
+Setup: Iterate the supported UI languages through the translation manager.
+Procedure: Read translated updater labels, errors, progress strings, and changelog headings.
+Expected outcome: Each supported language returns the expected localized updater strings.
+Run: `./build-tests/ai_file_sorter_tests "Updater strings are translated for all supported UI languages"`
+
+#### Test case: Quick Start guide content follows the selected app language
+Purpose: Ensure the local Quick Start guide body follows the active app language.
+Setup: Set the translation manager to English, French, and Korean.
+Procedure: Resolve the Quick Start markdown for each selected language.
+Expected outcome: Each language loads the matching localized markdown content instead of the English fallback when a translation exists.
+Run: `./build-tests/ai_file_sorter_tests "Quick Start guide content follows the selected app language"`
+
+#### Test case: Quick Start and FAQ help labels are translated for all supported UI languages
+Purpose: Verify Help menu labels and the Quick Start dialog title are covered by translation catalogs.
+Setup: Iterate all supported UI languages.
+Procedure: Translate `&Quick Start Guide`, `&FAQ`, and `Quick Start Guide` through Qt translation contexts.
+Expected outcome: Each supported language returns the expected localized labels.
+Run: `./build-tests/ai_file_sorter_tests "Quick Start and FAQ help labels are translated for all supported UI languages"`
+
 ### `tests/unit/test_whitelist_and_prompt.cpp`
+
+#### Test case: WhitelistStore seeds built-in presets when empty
+Purpose: Ensure a new whitelist store starts with the built-in presets.
+Setup: Create a temporary settings store without saved whitelists.
+Procedure: Initialize `WhitelistStore` and read the available entries.
+Expected outcome: Built-in presets are present and selectable.
+Run: `./build-tests/ai_file_sorter_tests "WhitelistStore seeds built-in presets when empty"`
+
+#### Test case: WhitelistStore migrates the Documents preset once for legacy stores
+Purpose: Verify legacy saved whitelist data receives the updated Documents preset without repeated migration.
+Setup: Create a legacy whitelist settings payload.
+Procedure: Initialize the store twice and inspect the stored presets.
+Expected outcome: The Documents preset is migrated once and remains stable on the second load.
+Run: `./build-tests/ai_file_sorter_tests "WhitelistStore migrates the Documents preset once for legacy stores"`
 
 #### Test case: WhitelistStore initializes from settings and persists defaults
 Purpose: Ensure whitelist entries are loaded into settings and persisted.
@@ -781,12 +993,61 @@ Procedure: Verify the settings fields and reload the whitelist store from disk.
 Expected outcome: The whitelist name, categories, and subcategories remain consistent across initialization and reload.
 Run: `./build-tests/ai_file_sorter_tests "WhitelistStore initializes from settings and persists defaults"`
 
+#### Test case: WhitelistStore preserves Unicode labels through save and load
+Purpose: Ensure valid Unicode whitelist labels, including emoji, survive persistence.
+Setup: Save a whitelist entry containing Unicode category/subcategory labels.
+Procedure: Reload the whitelist store from settings.
+Expected outcome: The Unicode labels are unchanged after the round trip.
+Run: `./build-tests/ai_file_sorter_tests "WhitelistStore preserves Unicode labels through save and load"`
+
 #### Test case: CategorizationService builds numbered whitelist context
 Purpose: Confirm the whitelist context includes numbered categories and an "any" subcategory fallback.
 Setup: Set allowed categories in settings and build a service instance.
 Procedure: Call the test access method to build the whitelist context string.
 Expected outcome: The context includes numbered category lines and indicates that subcategories are unrestricted.
 Run: `./build-tests/ai_file_sorter_tests "CategorizationService builds numbered whitelist context"`
+
+#### Test case: CategorizationService preserves Unicode whitelist labels in combined context
+Purpose: Ensure Unicode whitelist labels are forwarded into model prompt context.
+Setup: Configure a whitelist containing Unicode labels and build a categorization service.
+Procedure: Build the combined whitelist/category-language context.
+Expected outcome: The generated context preserves the Unicode labels exactly.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService preserves Unicode whitelist labels in combined context"`
+
+#### Test case: CategorizationService keeps small whitelists fully injected
+Purpose: Preserve existing predictable prompt behavior for small whitelists.
+Setup: Configure a small whitelist with two categories and build a categorization service.
+Procedure: Build the combined prompt context for a matching file.
+Expected outcome: The full numbered whitelist is included and no large-whitelist candidate block is used.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService keeps small whitelists fully injected"`
+
+#### Test case: CategorizationService retrieves candidates instead of injecting large whitelists
+Purpose: Prevent large whitelists from being dumped into the LLM prompt.
+Setup: Configure a large whitelist, seed matching whitelist candidates in the learning store, and attach the store to the service.
+Procedure: Build the combined prompt context for a matching file.
+Expected outcome: The context contains a compact large-whitelist candidate block with the relevant category, omits unrelated whitelist entries, and does not duplicate the generic learned-candidate block.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService retrieves candidates instead of injecting large whitelists"`
+
+#### Test case: CategorizationService ranks large whitelist candidates without learning store
+Purpose: Ensure large-whitelist prompt reduction still works when the learning database has not been seeded.
+Setup: Configure a large whitelist with one lexically matching category and no learning store.
+Procedure: Build the combined prompt context for a matching file.
+Expected outcome: The context uses the large-whitelist candidate block and includes the lexically matched category without injecting unrelated entries.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService ranks large whitelist candidates without learning store"`
+
+#### Test case: CategorizationService adds relevant learned taxonomy candidates to context
+Purpose: Ensure learned behavior produces a small prompt candidate block before LLM categorization.
+Setup: Record a review-confirmed manual mapping, import an unrelated spreadsheet candidate, and build a categorization service with the learning store attached.
+Procedure: Build combined context for a camera manual file.
+Expected outcome: The context includes the learned manual candidate and omits the unrelated spreadsheet candidate.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService adds relevant learned taxonomy candidates to context"`
+
+#### Test case: CategorizationService prefers learned candidates over generic model categories
+Purpose: Prefer a strong user-learned category when the model returns a generic category for a semantically matching file.
+Setup: Record a review-confirmed manual mapping and use an LLM stub that returns `Documents : General`.
+Procedure: Categorize a camera manual file through the service.
+Expected outcome: The final category/subcategory uses the learned `Manuals : Camera Guides` mapping instead of the generic model output.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService prefers learned candidates over generic model categories"`
 
 #### Test case: CategorizationService builds category language context when non-English selected
 Purpose: Ensure the category language context is generated for non-English settings.
@@ -802,11 +1063,53 @@ Procedure: Build the category language context string.
 Expected outcome: The context is non-empty and references "Spanish".
 Run: `./build-tests/ai_file_sorter_tests "CategorizationService builds category language context for Spanish"`
 
+#### Test case: LocalLLM sanitizer keeps labeled multi-line replies intact
+Purpose: Preserve valid labeled category/subcategory responses while removing unrelated text.
+Setup: Provide a multi-line response with category and subcategory labels.
+Procedure: Run the local LLM response sanitizer.
+Expected outcome: The labeled category/subcategory answer remains parseable.
+Run: `./build-tests/ai_file_sorter_tests "LocalLLM sanitizer keeps labeled multi-line replies intact"`
+
+#### Test case: LocalLLM sanitizer prefers the last inline pair
+Purpose: Handle model responses that include multiple inline category pairs.
+Setup: Provide a response with more than one candidate pair.
+Procedure: Run the sanitizer.
+Expected outcome: The last inline pair is retained for parsing.
+Run: `./build-tests/ai_file_sorter_tests "LocalLLM sanitizer prefers the last inline pair"`
+
+#### Test case: LocalLLM sanitizer strips rationale and natural language lead-ins
+Purpose: Remove explanatory lead-in text before category labels.
+Setup: Provide a response with natural-language rationale plus a valid pair.
+Procedure: Run the sanitizer.
+Expected outcome: The resulting text contains only the parseable category/subcategory answer.
+Run: `./build-tests/ai_file_sorter_tests "LocalLLM sanitizer strips rationale and natural language lead-ins"`
+
+#### Test case: LocalLLM sanitizer ignores trailing note lines
+Purpose: Remove extra notes after a valid category response.
+Setup: Provide a valid response followed by a note.
+Procedure: Run the sanitizer.
+Expected outcome: The trailing note is omitted.
+Run: `./build-tests/ai_file_sorter_tests "LocalLLM sanitizer ignores trailing note lines"`
+
+#### Test case: LocalLLM sanitizer strips translated parenthetical glosses
+Purpose: Keep canonical labels clean when the model adds translated explanations in parentheses.
+Setup: Provide category labels with parenthetical glosses.
+Procedure: Run the sanitizer.
+Expected outcome: Parenthetical glosses are removed from the parseable answer.
+Run: `./build-tests/ai_file_sorter_tests "LocalLLM sanitizer strips translated parenthetical glosses"`
+
+#### Test case: LocalLLM sanitizer strips inline subcategory label artifacts from category values
+Purpose: Prevent duplicated label artifacts from contaminating category values.
+Setup: Provide a response where `Subcategory:` appears inline after the category value.
+Procedure: Run the sanitizer.
+Expected outcome: The category value excludes the inline subcategory label artifact.
+Run: `./build-tests/ai_file_sorter_tests "LocalLLM sanitizer strips inline subcategory label artifacts from category values"`
+
 #### Test case: CategorizationService parses category output without spaced colon delimiters
 Purpose: Ensure category parsing accepts compact `Category:Subcategory` output.
-Setup: Use a fixed LLM stub response `Documents:Spreadsheets`.
+Setup: Use a fixed LLM stub response `Documents:Invoices`.
 Procedure: Run `categorize_entries` for one file entry.
-Expected outcome: Parsed category is `Documents` and parsed subcategory is `Spreadsheets`.
+Expected outcome: Parsed category is `Documents` and parsed subcategory is `Invoices`.
 Run: `./build-tests/ai_file_sorter_tests "CategorizationService parses category output without spaced colon delimiters"`
 
 #### Test case: CategorizationService parses labeled category and subcategory lines
@@ -815,6 +1118,62 @@ Setup: Use a fixed LLM stub response with `Category: ...` and `Subcategory: ...`
 Procedure: Run `categorize_entries` for one file entry.
 Expected outcome: Parsed labels match the provided category and subcategory values.
 Run: `./build-tests/ai_file_sorter_tests "CategorizationService parses labeled category and subcategory lines"`
+
+#### Test case: CategorizationService extracts the trailing pair from verbose responses
+Purpose: Recover the final category/subcategory pair when the model includes verbose text first.
+Setup: Provide a verbose response ending with a valid pair.
+Procedure: Run categorization and parse the result.
+Expected outcome: The trailing valid pair is used.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService extracts the trailing pair from verbose responses"`
+
+#### Test case: CategorizationService prefers the final pair when the model echoes examples
+Purpose: Ignore echoed examples before the model's final answer.
+Setup: Provide a response containing example pairs followed by a final pair.
+Procedure: Run categorization and parse the result.
+Expected outcome: The final answer pair is selected.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService prefers the final pair when the model echoes examples"`
+
+#### Test case: CategorizationService strips rationale from subcategory text
+Purpose: Clean subcategory values when a model appends explanatory rationale.
+Setup: Provide a subcategory answer followed by rationale text.
+Procedure: Run categorization and parse the result.
+Expected outcome: The parsed subcategory excludes the rationale.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService strips rationale from subcategory text"`
+
+#### Test case: CategorizationService extracts a short category from natural language lead-ins
+Purpose: Accept concise category answers buried in natural-language lead-ins.
+Setup: Provide a response with prose followed by a short category/subcategory pair.
+Procedure: Run categorization and parse the result.
+Expected outcome: The short category/subcategory pair is extracted.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService extracts a short category from natural language lead-ins"`
+
+#### Test case: CategorizationService ignores trailing note lines after a valid answer
+Purpose: Avoid adding model notes to parsed labels.
+Setup: Provide a valid category/subcategory answer followed by note lines.
+Procedure: Run categorization and parse the result.
+Expected outcome: The parsed labels exclude trailing notes.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService ignores trailing note lines after a valid answer"`
+
+#### Test case: CategorizationService progress shows current and categorization paths
+Purpose: Ensure progress messages identify both the original path and categorization target.
+Setup: Run categorization with a progress callback.
+Procedure: Capture progress messages emitted for a file.
+Expected outcome: The messages include the current file path and categorization path context.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService progress shows current and categorization paths"`
+
+#### Test case: Document prompt helpers use the suggested filename for categorization
+Purpose: Ensure document prompts prefer the AI-suggested filename when present.
+Setup: Provide an original filename and a suggested filename.
+Procedure: Resolve the document prompt name through the helper.
+Expected outcome: The suggested filename is used.
+Run: `./build-tests/ai_file_sorter_tests "Document prompt helpers use the suggested filename for categorization"`
+
+#### Test case: Document prompt path uses the suggested filename and preserves summaries
+Purpose: Ensure document prompt paths combine suggested filenames with extracted summaries.
+Setup: Provide a document path, suggested filename, and summary text.
+Procedure: Build the document prompt path through the test access helper.
+Expected outcome: The prompt path uses the suggested filename and retains the summary payload.
+Run: `./build-tests/ai_file_sorter_tests "Document prompt path uses the suggested filename and preserves summaries"`
 
 #### Test case: Image prompt path uses the suggested filename and preserves descriptions
 Purpose: Ensure image categorization prompts use the suggested filename while preserving the visual description payload.
@@ -829,6 +1188,41 @@ Setup: Create a categorization service with a prompt-capturing LLM stub, then pr
 Procedure: Run `categorize_entries` with a prompt override for the image entry and inspect the captured prompt path passed to the LLM.
 Expected outcome: The captured prompt contains the suggested filename and `Image description:` section, and omits the original filename.
 Run: `./build-tests/ai_file_sorter_tests "CategorizationService passes image descriptions through prompt overrides"`
+
+#### Test case: CategorizationService preserves analysis context for learned behavior capture
+Purpose: Carry document summary or image description text through categorization so approved review mappings can store richer learning context.
+Setup: Build a document prompt path containing a summary and categorize with a stub model.
+Procedure: Inspect the resulting `CategorizedFile`.
+Expected outcome: The categorized file exposes the extracted analysis context for later storage by the review dialog.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService preserves analysis context for learned behavior capture"`
+
+#### Test case: CategorizationService adds subject-focused guidance for screenshot-like image prompts
+Purpose: Improve categorization prompts for screenshots and UI-like image descriptions.
+Setup: Build an image prompt path from a screenshot-like visual description.
+Procedure: Generate the categorization prompt.
+Expected outcome: The prompt includes subject-focused guidance for screenshot-like content.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService adds subject-focused guidance for screenshot-like image prompts"`
+
+#### Test case: CategorizationService skips extension-only consistency hints for rich image prompts
+Purpose: Avoid weak extension-only hints when image descriptions already provide rich visual context.
+Setup: Build a rich image prompt and consistency hints based only on extension.
+Procedure: Generate categorization guidance.
+Expected outcome: Extension-only hints are omitted for the rich image prompt.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService skips extension-only consistency hints for rich image prompts"`
+
+#### Test case: CategorizationService stores canonical English labels and persists translated taxonomy labels
+Purpose: Preserve canonical taxonomy storage while displaying translated labels.
+Setup: Categorize with a non-English category language.
+Procedure: Store and reload the categorization result.
+Expected outcome: Canonical English labels are stored, and translated taxonomy labels are persisted for display.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService stores canonical English labels and persists translated taxonomy labels"`
+
+#### Test case: CategorizationService strips inline subcategory label artifacts when parsing service output
+Purpose: Ensure service-level parsing removes inline `Subcategory:` artifacts from category text.
+Setup: Provide categorization output with inline label artifacts.
+Procedure: Run service parsing.
+Expected outcome: Parsed category and subcategory values are clean.
+Run: `./build-tests/ai_file_sorter_tests "CategorizationService strips inline subcategory label artifacts when parsing service output"`
 
 ### `tests/unit/test_cache_interactions.cpp`
 
