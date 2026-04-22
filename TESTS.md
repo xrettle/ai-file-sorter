@@ -521,6 +521,13 @@ Run: `./build-tests/ai_file_sorter_tests "Settings persists selected visual mode
 
 ### `tests/unit/test_llava_image_analyzer.cpp`
 
+#### Test case: LlavaImageAnalyzer keeps guarded visual projectors on CPU when headroom is tight
+Purpose: Verify CUDA and Vulkan visual projector GPU use is gated by available memory headroom.
+Setup: Use the visual analyzer test access helper with a representative LLaVA mmproj size and two free-memory levels.
+Procedure: Check CUDA and Vulkan with tight memory, CUDA with comfortable memory, and Metal as an unguarded backend.
+Expected outcome: CUDA and Vulkan decline projector GPU use when headroom is tight; CUDA accepts it with enough headroom, and Metal remains unchanged.
+Run: `./build-tests/ai_file_sorter_tests "LlavaImageAnalyzer keeps guarded visual projectors on CPU when headroom is tight"`
+
 #### Test case: LlavaImageAnalyzer exposes legacy LLaVA prompt policy
 Purpose: Verify the legacy visual backends keep the older prompt wording expected by the LLaVA path.
 Setup: Use the prompt-policy test access helpers with the legacy policy.

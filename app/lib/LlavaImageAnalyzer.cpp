@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -353,6 +354,33 @@ llama_model_params build_visual_model_params_for_path(
     return build_model_params_for_path(model_path, logger);
 }
 
+bool is_mmproj_memory_guarded_backend(std::string_view backend_name) {
+    return case_insensitive_contains(backend_name, "cuda") ||
+           case_insensitive_contains(backend_name, "vulkan");
+}
+
+std::string guarded_backend_label(std::string_view backend_name) {
+    if (case_insensitive_contains(backend_name, "cuda")) {
+        return "CUDA";
+    }
+    if (case_insensitive_contains(backend_name, "vulkan")) {
+        return "Vulkan";
+    }
+    return "GPU";
+}
+
+size_t required_mmproj_gpu_bytes(std::uintmax_t file_size) {
+    constexpr size_t kMinHeadroomBytes = 512ULL * 1024ULL * 1024ULL;
+    const size_t mmproj_bytes = static_cast<size_t>(
+        std::min<std::uintmax_t>(file_size, std::numeric_limits<size_t>::max()));
+    const size_t inflated_bytes = mmproj_bytes + (mmproj_bytes / 3);
+    return inflated_bytes + kMinHeadroomBytes;
+}
+
+bool has_mmproj_gpu_headroom(size_t free_bytes, std::uintmax_t file_size) {
+    return free_bytes >= required_mmproj_gpu_bytes(file_size);
+}
+
 #ifdef AI_FILE_SORTER_HAS_MTMD
 struct BackendMemoryInfo {
     size_t free_bytes = 0;
@@ -360,7 +388,24 @@ struct BackendMemoryInfo {
     std::string name;
 };
 
+std::optional<BackendMemoryInfo> query_cuda_backend_memory() {
+    const auto memory = Utils::query_cuda_memory();
+    if (!memory.has_value() || !memory->valid()) {
+        return std::nullopt;
+    }
+
+    BackendMemoryInfo info;
+    info.free_bytes = memory->free_bytes;
+    info.total_bytes = (memory->total_bytes != 0) ? memory->total_bytes : memory->free_bytes;
+    info.name = "CUDA";
+    return info;
+}
+
 std::optional<BackendMemoryInfo> query_backend_memory(std::string_view backend_name) {
+    if (case_insensitive_contains(backend_name, "cuda")) {
+        return query_cuda_backend_memory();
+    }
+
     const size_t device_count = ggml_backend_dev_count();
     BackendMemoryInfo best{};
     bool found = false;
@@ -404,15 +449,17 @@ std::optional<BackendMemoryInfo> query_backend_memory(std::string_view backend_n
 bool should_enable_mmproj_gpu(const std::filesystem::path& mmproj_path,
                               std::string_view backend_name,
                               const std::shared_ptr<spdlog::logger>& logger) {
-    if (!case_insensitive_contains(backend_name, "vulkan")) {
+    if (!is_mmproj_memory_guarded_backend(backend_name)) {
         return true;
     }
 
-    const auto memory = query_backend_memory("vulkan");
+    const auto backend_label = guarded_backend_label(backend_name);
+    const auto memory = query_backend_memory(backend_name);
     if (!memory.has_value()) {
         if (logger) {
-            logger->warn("Vulkan memory metrics unavailable; using CPU for visual encoder to avoid OOM. "
-                         "Set AI_FILE_SORTER_VISUAL_USE_GPU=1 to force GPU.");
+            logger->warn("{} memory metrics unavailable; using CPU for visual encoder to avoid OOM. "
+                         "Set AI_FILE_SORTER_VISUAL_USE_GPU=1 to force GPU.",
+                         backend_label);
         }
         return false;
     }
@@ -428,18 +475,15 @@ bool should_enable_mmproj_gpu(const std::filesystem::path& mmproj_path,
         return false;
     }
 
-    constexpr size_t kMinHeadroomBytes = 512ULL * 1024ULL * 1024ULL;
-    const size_t mmproj_bytes = static_cast<size_t>(
-        std::min<std::uintmax_t>(file_size, std::numeric_limits<size_t>::max()));
-    const size_t inflated_bytes = mmproj_bytes + (mmproj_bytes / 3);
-    const size_t required_bytes = inflated_bytes + kMinHeadroomBytes;
+    const size_t required_bytes = required_mmproj_gpu_bytes(file_size);
 
-    if (memory->free_bytes < required_bytes) {
+    if (!has_mmproj_gpu_headroom(memory->free_bytes, file_size)) {
         if (logger) {
             const double to_mib = 1024.0 * 1024.0;
             logger->warn(
-                "Vulkan free memory {:.1f} MiB < {:.1f} MiB needed for mmproj; using CPU for visual encoder. "
+                "{} free memory {:.1f} MiB < {:.1f} MiB needed for mmproj; using CPU for visual encoder. "
                 "Set AI_FILE_SORTER_VISUAL_USE_GPU=1 to force GPU.",
+                backend_label,
                 memory->free_bytes / to_mib,
                 required_bytes / to_mib);
         }
@@ -558,6 +602,13 @@ int32_t default_visual_batch_size(bool gpu_enabled, std::string_view backend_nam
 
 int32_t visual_model_n_gpu_layers_for_model(const std::string& model_path) {
     return build_visual_model_params_for_path(model_path, nullptr).n_gpu_layers;
+}
+
+bool should_use_mmproj_gpu_for_memory(std::string_view backend_name,
+                                      size_t free_bytes,
+                                      std::uintmax_t mmproj_file_size) {
+    return !is_mmproj_memory_guarded_backend(backend_name) ||
+           has_mmproj_gpu_headroom(free_bytes, mmproj_file_size);
 }
 
 std::string description_system_prompt(VisualPromptPolicy policy) {

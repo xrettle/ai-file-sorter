@@ -4,6 +4,8 @@
 #include "VisualModelCatalog.hpp"
 
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -179,6 +181,16 @@ private:
 namespace LlavaImageAnalyzerTestAccess {
 int32_t default_visual_batch_size(bool gpu_enabled, std::string_view backend_name);
 int32_t visual_model_n_gpu_layers_for_model(const std::string& model_path);
+/**
+ * @brief Evaluates whether a visual projector should remain on GPU for the given free memory.
+ * @param backend_name Active GPU backend name.
+ * @param free_bytes Free bytes reported after loading the visual text model.
+ * @param mmproj_file_size Multimodal projector file size in bytes.
+ * @return True when the projector can use GPU memory for that backend.
+ */
+bool should_use_mmproj_gpu_for_memory(std::string_view backend_name,
+                                      size_t free_bytes,
+                                      std::uintmax_t mmproj_file_size);
 std::string description_system_prompt(VisualPromptPolicy policy);
 std::string description_user_prompt(VisualPromptPolicy policy);
 std::string filename_system_prompt(VisualPromptPolicy policy);

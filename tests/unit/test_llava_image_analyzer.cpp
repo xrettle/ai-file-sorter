@@ -4,6 +4,9 @@
 #include "TestHelpers.hpp"
 #include "TestHooks.hpp"
 
+#include <cstddef>
+#include <cstdint>
+
 #ifndef GGML_USE_METAL
 namespace {
 
@@ -26,6 +29,21 @@ TEST_CASE("LlavaImageAnalyzer uses conservative default visual batch sizing") {
 #else
     CHECK(LlavaImageAnalyzerTestAccess::default_visual_batch_size(true, "cuda") == 768);
 #endif
+}
+
+TEST_CASE("LlavaImageAnalyzer keeps guarded visual projectors on CPU when headroom is tight") {
+    constexpr std::uintmax_t mmproj_size = 624451168ULL;
+    constexpr size_t tight_free = 1024ULL * 1024ULL * 1024ULL;
+    constexpr size_t comfortable_free = 2ULL * 1024ULL * 1024ULL * 1024ULL;
+
+    CHECK_FALSE(LlavaImageAnalyzerTestAccess::should_use_mmproj_gpu_for_memory(
+        "cuda", tight_free, mmproj_size));
+    CHECK_FALSE(LlavaImageAnalyzerTestAccess::should_use_mmproj_gpu_for_memory(
+        "vulkan", tight_free, mmproj_size));
+    CHECK(LlavaImageAnalyzerTestAccess::should_use_mmproj_gpu_for_memory(
+        "cuda", comfortable_free, mmproj_size));
+    CHECK(LlavaImageAnalyzerTestAccess::should_use_mmproj_gpu_for_memory(
+        "metal", tight_free, mmproj_size));
 }
 
 TEST_CASE("LlavaImageAnalyzer exposes legacy LLaVA prompt policy") {
