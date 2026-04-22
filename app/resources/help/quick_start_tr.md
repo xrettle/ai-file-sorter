@@ -1,6 +1,8 @@
 # Hizli Baslangic Kilavuzu
 
-AI File Sorter, herhangi bir dosya tasinmadan veya yeniden adlandirilmadan once dosyalarinizi incelemenize ve duzenlemenize yardim eder.
+AI File Sorter, incelemeniz ve onayinizdan sonra dosyalarinizi duzenlemenize yardim eder.
+
+Yapay zeka analizi yonlendirir ve kategoriler, alt kategoriler ve adlar onerir. Dosyalariniza dogrudan dokunmaz. Tasima veya yeniden adlandirma islemlerini, incelenen degisiklikleri onayladiktan sonra uygulama yapar.
 
 ## 1. Bir klasor secin
 
@@ -55,7 +57,19 @@ Herhangi bir seyi onaylamadan once onerileri duzenleyebilir veya reddedebilirsin
 
 Onay verdikten sonra uygulama gerekli klasorleri olusturur ve tasima ya da yeniden adlandirma islemlerini yapar.
 
-Gerekirse daha sonra menuden **Undo last run** secenegini kullanabilirsiniz.
+## 7. Son calistirmayi geri alin
+
+Degisiklikleri uyguladiktan sonra geri almak isterseniz menuden **Undo last run** secenegini kullanin.
+
+Geri alma ozelligi, en son onaylanan siralama calistirmasi icin tasarlanmistir. Uygulamanin kaydettigi calistirma gecmisini kullanarak dosyalari mumkun oldugunca geri tasir ve desteklenen yeniden adlandirmalari geri alir.
+
+En iyi sonuc icin ayni klasorde baska buyuk bir temizlik baslatmadan once geri alma ozelligini kullanin.
+
+## 8. Incelemelerinizden ogrenme
+
+Inceleme penceresinde kategorileri onayladiginizda uygulama bu yerel kararlari hatirlayabilir ve sonraki calistirmalarda ipucu olarak kullanabilir. Bu, yapay zeka modelini egitmez veya degistirmez.
+
+Ogrenilen ornekler ayri bir yerel veritabaninda saklanir, bu nedenle normal kategorilendirme onbellegini temizlemek bunlari silmez. Bu yerel ogrenme verilerini silmek icin **Settings -> Reset learned behavior** secenegini kullanin.
 
 ## Bilmeniz iyi olur
 

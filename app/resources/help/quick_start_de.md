@@ -1,6 +1,8 @@
 # Schnellstartanleitung
 
-AI File Sorter hilft Ihnen dabei, Dateien zu pruefen und zu organisieren, bevor etwas verschoben oder umbenannt wird.
+AI File Sorter hilft Ihnen dabei, Dateien nach Ihrer Pruefung und Zustimmung zu organisieren.
+
+Die KI steuert die Analyse und schlaegt Kategorien, Unterkategorien und Namen vor. Sie greift nicht direkt auf Ihre Dateien ein. Die App fuehrt Verschiebungen oder Umbenennungen erst aus, nachdem Sie die geprueften Aenderungen bestaetigt haben.
 
 ## 1. Einen Ordner auswaehlen
 
@@ -55,7 +57,19 @@ Sie koennen Vorschlaege anpassen oder ablehnen, bevor Sie etwas bestaetigen.
 
 Nach der Bestaetigung erstellt die App die benoetigten Ordner und fuehrt die Verschiebungen oder Umbenennungen aus.
 
-Falls noetig, koennen Sie danach **Undo last run** im Menu verwenden.
+## 7. Letzten Durchlauf rueckgaengig machen
+
+Wenn Sie Aenderungen angewendet haben und sie danach zuruecknehmen moechten, verwenden Sie **Undo last run** im Menu.
+
+Die Rueckgaengig-Funktion ist fuer den letzten bestaetigten Sortierdurchlauf gedacht. Sie nutzt den von der App gespeicherten Verlauf, um Dateien soweit moeglich zurueckzuschieben und unterstuetzte Umbenennungen rueckgaengig zu machen.
+
+Am besten verwenden Sie die Funktion, bevor Sie eine weitere groessere Bereinigung im selben Ordner starten.
+
+## 8. Lernen aus Ihren Bestaetigungen
+
+Wenn Sie Kategorien im Pruefdialog bestaetigen, kann die App diese lokalen Entscheidungen merken und bei zukuenftigen Durchlaeufen als Hinweise verwenden. Dadurch wird das KI-Modell nicht trainiert oder veraendert.
+
+Die gelernten Beispiele werden in einer separaten lokalen Datenbank gespeichert. Das Leeren des normalen Kategorisierungs-Caches entfernt sie daher nicht. Um diese lokalen Lerndaten zu entfernen, verwenden Sie **Settings -> Reset learned behavior**.
 
 ## Gut zu wissen
 

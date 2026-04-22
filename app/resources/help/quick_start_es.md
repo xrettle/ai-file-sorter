@@ -1,6 +1,8 @@
 # Guia de inicio rapido
 
-AI File Sorter te ayuda a revisar y organizar archivos antes de moverlos o renombrarlos.
+AI File Sorter te ayuda a organizar archivos despues de tu revision y aprobacion.
+
+La IA dirige el analisis y sugiere categorias, subcategorias y nombres. No toca directamente tus archivos. La aplicacion realiza los movimientos o cambios de nombre solo despues de que confirmes los cambios revisados.
 
 ## 1. Elige una carpeta
 
@@ -55,7 +57,19 @@ Puedes ajustar o rechazar sugerencias antes de confirmar nada.
 
 Una vez confirmado, la aplicacion crea las carpetas necesarias y realiza los movimientos o cambios de nombre.
 
-Si lo necesitas, despues puedes usar **Undo last run** desde el menu.
+## 7. Deshaz la ultima ejecucion
+
+Si aplicas cambios y luego quieres revertirlos, usa **Undo last run** desde el menu.
+
+La funcion de deshacer esta pensada para la ejecucion de ordenacion confirmada mas reciente. Usa el historial registrado por la aplicacion para devolver archivos a su ubicacion anterior y revertir cambios de nombre compatibles cuando sea posible.
+
+Para obtener mejores resultados, usa deshacer antes de iniciar otra limpieza grande en la misma carpeta.
+
+## 8. Aprendizaje a partir de tus revisiones
+
+Cuando apruebas categorias en el dialogo de revision, la aplicacion puede recordar esas decisiones locales y usarlas como pistas en futuras ejecuciones. Esto no entrena ni modifica el modelo de IA.
+
+Los ejemplos aprendidos se guardan en una base de datos local separada, por lo que borrar la cache normal de categorizacion no los elimina. Para borrar estos datos locales de aprendizaje, usa **Settings -> Reset learned behavior**.
 
 ## Conviene saber
 

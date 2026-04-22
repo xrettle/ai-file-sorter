@@ -1,6 +1,8 @@
 # Guida rapida
 
-AI File Sorter ti aiuta a controllare e organizzare i file prima che qualcosa venga spostato o rinominato.
+AI File Sorter ti aiuta a organizzare i file dopo la tua revisione e approvazione.
+
+L'IA guida l'analisi e suggerisce categorie, sottocategorie e nomi. Non modifica direttamente i tuoi file. L'app esegue spostamenti o rinomine solo dopo che confermi le modifiche revisionate.
 
 ## 1. Scegli una cartella
 
@@ -55,7 +57,19 @@ Puoi modificare o rifiutare i suggerimenti prima di confermare qualunque cosa.
 
 Dopo la conferma, l'app crea le cartelle necessarie ed esegue gli spostamenti o le rinomine.
 
-Se necessario, puoi usare **Undo last run** dal menu.
+## 7. Annulla l'ultima esecuzione
+
+Se applichi le modifiche e poi vuoi annullarle, usa **Undo last run** dal menu.
+
+L'annullamento e pensato per l'ultima esecuzione di ordinamento confermata. Usa la cronologia registrata dall'app per riportare i file dove si trovavano e annullare le rinomine supportate quando possibile.
+
+Per risultati migliori, usa l'annullamento prima di avviare un altro grande riordino nella stessa cartella.
+
+## 8. Apprendimento dalle tue revisioni
+
+Quando approvi le categorie nella finestra di revisione, l'app puo ricordare queste decisioni locali e usarle come suggerimenti nelle esecuzioni future. Questo non addestra e non modifica il modello di IA.
+
+Gli esempi appresi vengono salvati in un database locale separato, quindi svuotare la normale cache di categorizzazione non li elimina. Per eliminare questi dati locali di apprendimento, usa **Settings -> Reset learned behavior**.
 
 ## Utile da sapere
 

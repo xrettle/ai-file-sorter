@@ -1,6 +1,8 @@
 # Quick Start Guide
 
-AI File Sorter helps you review and organize files before anything is moved or renamed.
+AI File Sorter helps you organize files after your review and approval.
+
+The AI drives the analysis and suggests categories, subcategories, and names. It does not directly touch your files. The app performs any moves or renames only after you confirm the reviewed changes.
 
 ## 1. Choose a Folder
 
@@ -55,7 +57,19 @@ You can adjust or reject suggestions before confirming anything.
 
 Once you confirm, the app creates the required folders and performs the moves or renames.
 
-If needed, you can use **Undo last run** from the menu afterward.
+## 7. Undo the Last Run
+
+If you apply changes and then want to reverse them, use **Undo last run** from the menu.
+
+Undo is designed for the most recent confirmed sorting run. It uses the app's recorded run history to move files back and reverse supported renames where possible.
+
+For best results, use Undo before starting another large cleanup in the same folder.
+
+## 8. Learning from Your Reviews
+
+When you approve categories in the review dialog, the app can remember those local decisions and use them as hints for future runs. This does not train or modify the AI model.
+
+The learned examples are stored in a separate local database, so clearing the normal categorization cache does not remove them. To remove this local learning data, use **Settings -> Reset learned behavior**.
 
 ## Good to Know
 

@@ -1,6 +1,8 @@
 # Guide de demarrage rapide
 
-AI File Sorter vous aide a verifier et organiser vos fichiers avant tout deplacement ou renommage.
+AI File Sorter vous aide a organiser vos fichiers apres votre verification et votre approbation.
+
+L'IA pilote l'analyse et propose des categories, des sous-categories et des noms. Elle ne modifie pas directement vos fichiers. L'application effectue les deplacements ou renommages seulement apres votre confirmation des changements verifies.
 
 ## 1. Choisir un dossier
 
@@ -55,7 +57,19 @@ Vous pouvez ajuster ou refuser les suggestions avant de confirmer quoi que ce so
 
 Une fois confirme, l'application cree les dossiers necessaires et effectue les deplacements ou renommages.
 
-Si besoin, vous pouvez ensuite utiliser **Undo last run** dans le menu.
+## 7. Annuler la derniere execution
+
+Si vous appliquez des modifications puis voulez les annuler, utilisez **Undo last run** dans le menu.
+
+L'annulation est prevue pour la derniere execution de tri confirmee. Elle utilise l'historique enregistre par l'application pour remettre les fichiers a leur emplacement precedent et annuler les renommages pris en charge lorsque c'est possible.
+
+Pour de meilleurs resultats, utilisez l'annulation avant de lancer un autre grand nettoyage dans le meme dossier.
+
+## 8. Apprentissage a partir de vos validations
+
+Quand vous approuvez des categories dans la fenetre de verification, l'application peut memoriser ces decisions locales et les utiliser comme indices lors des prochaines executions. Cela n'entraine pas et ne modifie pas le modele d'IA.
+
+Les exemples appris sont stockes dans une base de donnees locale separee. Vider le cache de categorisation normal ne les supprime donc pas. Pour supprimer ces donnees d'apprentissage locales, utilisez **Settings -> Reset learned behavior**.
 
 ## Bon a savoir
 

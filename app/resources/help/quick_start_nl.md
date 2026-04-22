@@ -1,6 +1,8 @@
 # Snelstartgids
 
-AI File Sorter helpt u bestanden te controleren en te ordenen voordat er iets wordt verplaatst of hernoemd.
+AI File Sorter helpt u bestanden te ordenen na uw controle en goedkeuring.
+
+De AI stuurt de analyse en stelt categorieen, subcategorieen en namen voor. De AI raakt uw bestanden niet rechtstreeks aan. De app voert verplaatsingen of hernoemingen pas uit nadat u de beoordeelde wijzigingen bevestigt.
 
 ## 1. Kies een map
 
@@ -55,7 +57,19 @@ U kunt suggesties aanpassen of afwijzen voordat u iets bevestigt.
 
 Na bevestiging maakt de app de benodigde mappen aan en voert hij de verplaatsingen of hernoemingen uit.
 
-Indien nodig kunt u daarna **Undo last run** in het menu gebruiken.
+## 7. De laatste run ongedaan maken
+
+Als u wijzigingen toepast en ze daarna wilt terugdraaien, gebruikt u **Undo last run** in het menu.
+
+Ongedaan maken is bedoeld voor de meest recent bevestigde sorteerrun. De app gebruikt de opgeslagen run-geschiedenis om bestanden terug te zetten en ondersteunde hernoemingen waar mogelijk terug te draaien.
+
+Gebruik deze functie bij voorkeur voordat u nog een grote opruiming in dezelfde map start.
+
+## 8. Leren van uw beoordelingen
+
+Wanneer u categorieen in het beoordelingsvenster goedkeurt, kan de app deze lokale beslissingen onthouden en ze als hints gebruiken bij toekomstige runs. Dit traint of wijzigt het AI-model niet.
+
+De geleerde voorbeelden worden opgeslagen in een aparte lokale database, zodat het wissen van de normale categorisatiecache ze niet verwijdert. Gebruik **Settings -> Reset learned behavior** om deze lokale leergegevens te verwijderen.
 
 ## Goed om te weten
 
