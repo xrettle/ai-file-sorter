@@ -7,6 +7,7 @@
 #include "TestHooks.hpp"
 #include "TestHelpers.hpp"
 #include "UndoManager.hpp"
+#include "UserLearningStore.hpp"
 #include <QCheckBox>
 #include <QTableView>
 #include <QStandardItemModel>
@@ -644,6 +645,54 @@ TEST_CASE("CategorizationDialog rename-only preserves cached categories when ren
     CHECK(cached->category == resolved.category);
     CHECK(cached->subcategory == resolved.subcategory);
     CHECK(cached->rename_only);
+}
+
+TEST_CASE("CategorizationDialog records confirmed categories as learned behavior") {
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", "offscreen");
+    QtAppContext qt_context;
+
+    TempDir config_dir;
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", config_dir.path().string());
+    DatabaseManager db(config_dir.path().string());
+    UserLearningStore learning_store(config_dir.path().string());
+    REQUIRE(learning_store.is_open());
+
+    TempDir temp_dir;
+    const std::filesystem::path base = temp_dir.path();
+    const std::string file_name = "manual.pdf";
+    std::ofstream(base / file_name).put('x');
+
+    CategorizedFile file;
+    file.file_path = base.string();
+    file.file_name = file_name;
+    file.type = FileType::File;
+    file.category = "Manuals";
+    file.subcategory = "Product Guides";
+    file.learning_context = "Document summary: Setup and maintenance instructions.";
+
+    TempDir undo_dir_for_dialog;
+    CategorizationDialog dialog(&db,
+                                true,
+                                undo_dir_for_dialog.path().string(),
+                                CategoryLanguage::English,
+                                nullptr,
+                                &learning_store);
+    dialog.test_set_entries({file});
+
+    dialog.test_trigger_confirm();
+
+    CHECK(learning_store.approved_example_count() == 1);
+    const auto learned = learning_store.find_taxonomy_entry("Manuals", "Product Guides");
+    REQUIRE(learned.has_value());
+    CHECK(learned->example_count == 1);
+
+    const auto examples = learning_store.approved_examples();
+    REQUIRE(examples.size() == 1);
+    CHECK(examples.front().file_name == file_name);
+    CHECK(examples.front().dir_path == base.string());
+    CHECK(examples.front().category == "Manuals");
+    CHECK(examples.front().subcategory == "Product Guides");
+    CHECK(examples.front().context_text == file.learning_context);
 }
 #endif
 

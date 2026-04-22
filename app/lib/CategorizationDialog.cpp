@@ -7,6 +7,7 @@
 #include "TestHooks.hpp"
 #include "Utils.hpp"
 #include "UndoManager.hpp"
+#include "UserLearningStore.hpp"
 #include "DryRunPreviewDialog.hpp"
 #include "DocumentTextAnalyzer.hpp"
 #include "LlavaImageAnalyzer.hpp"
@@ -272,13 +273,15 @@ CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager,
                                            bool show_subcategory_col,
                                            const std::string& undo_dir,
                                            CategoryLanguage category_language,
-                                           QWidget* parent)
+                                           QWidget* parent,
+                                           UserLearningStore* learning_store)
     : CategorizationDialog(db_manager,
                            default_storage_provider(),
                            show_subcategory_col,
                            undo_dir,
                            category_language,
-                           parent)
+                           parent,
+                           learning_store)
 {
 }
 
@@ -287,9 +290,11 @@ CategorizationDialog::CategorizationDialog(DatabaseManager* db_manager,
                                            bool show_subcategory_col,
                                            const std::string& undo_dir,
                                            CategoryLanguage category_language,
-                                           QWidget* parent)
+                                           QWidget* parent,
+                                           UserLearningStore* learning_store)
     : QDialog(parent),
       db_manager(db_manager),
+      learning_store_(learning_store),
       storage_provider_(&storage_provider),
       category_language_(category_language),
       show_subcategory_column(show_subcategory_col),
@@ -1074,6 +1079,7 @@ void CategorizationDialog::populate_model()
         file_item->setData(file.used_consistency_hints, kUsedConsistencyRole);
         file_item->setData(file.rename_only, kRenameOnlyRole);
         file_item->setData(static_cast<int>(file.type), kFileTypeRole);
+        file_item->setData(QString::fromStdString(file.learning_context), kLearningContextRole);
         const bool rename_locked = file.rename_applied ||
                                    (!file.suggested_name.empty() &&
                                     to_lower_copy_str(file.suggested_name) == to_lower_copy_str(file.file_name));
@@ -1182,7 +1188,7 @@ void CategorizationDialog::update_type_icon(QStandardItem* item)
 }
 
 
-void CategorizationDialog::record_categorization_to_db()
+void CategorizationDialog::record_categorization_to_db(bool learn_approved_mappings)
 {
     if (!db_manager) {
         return;
@@ -1252,6 +1258,9 @@ void CategorizationDialog::record_categorization_to_db()
         if (!file_item) {
             continue;
         }
+        const auto* select_item = model->item(row, ColumnSelect);
+        const bool selected_for_processing =
+            !select_item || select_item->checkState() == Qt::Checked;
         bool rename_only = file_item->data(kRenameOnlyRole).toBool();
         auto* category_item = model->item(row, ColumnCategory);
         auto* subcategory_item = model->item(row, ColumnSubcategory);
@@ -1338,6 +1347,24 @@ void CategorizationDialog::record_categorization_to_db()
         }
 
         auto resolved = resolve_for_storage(category_item, subcategory_item, category, subcategory);
+        if (learn_approved_mappings && selected_for_processing && learning_store_ &&
+            !resolved.category.empty()) {
+            std::string learning_error;
+            UserLearningStore::ApprovedMapping mapping;
+            mapping.file_name = file_name;
+            mapping.file_type = file_type;
+            mapping.dir_path = file_path;
+            mapping.category = resolved.category;
+            mapping.subcategory = resolved.subcategory;
+            mapping.suggested_name = suggested_name;
+            mapping.context_text = file_item->data(kLearningContextRole).toString().toStdString();
+            mapping.used_consistency_hints = used_consistency;
+            if (!learning_store_->record_approved_mapping(mapping, &learning_error) && db_logger) {
+                db_logger->warn("Failed to record learned categorization for '{}': {}",
+                                file_name,
+                                learning_error);
+            }
+        }
 
         const std::string file_type_label = (file_type == FileType::Directory) ? "D" : "F";
         if (cached_entry &&
@@ -1366,7 +1393,8 @@ void CategorizationDialog::record_categorization_to_db()
 
 void CategorizationDialog::on_confirm_and_sort_button_clicked()
 {
-    record_categorization_to_db();
+    const bool dry_run = dry_run_checkbox && dry_run_checkbox->isChecked();
+    record_categorization_to_db(!dry_run);
 
     if (categorized_files.empty()) {
         if (ui_logger) {
@@ -1385,7 +1413,6 @@ void CategorizationDialog::on_confirm_and_sort_button_clicked()
         undo_button->setVisible(false);
     }
 
-    const bool dry_run = dry_run_checkbox && dry_run_checkbox->isChecked();
     if (dry_run && core_logger) {
         core_logger->info("Dry run enabled; will not move files.");
     }

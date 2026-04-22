@@ -16,6 +16,7 @@
 
 class DatabaseManager;
 class IStorageProvider;
+class UserLearningStore;
 class QCloseEvent;
 class QEvent;
 class QPushButton;
@@ -27,17 +28,38 @@ class CategorizationDialog : public QDialog
 {
     Q_DECLARE_TR_FUNCTIONS(CategorizationDialog)
 public:
+    /**
+     * @brief Create the review dialog using the local filesystem provider.
+     * @param db_manager Categorization cache/taxonomy database manager.
+     * @param show_subcategory_col Whether the subcategory column is visible initially.
+     * @param undo_dir Directory used to persist undo move plans.
+     * @param category_language Language used for displayed category labels.
+     * @param parent Parent widget.
+     * @param learning_store Optional store for user-approved learning examples.
+     */
     CategorizationDialog(DatabaseManager* db_manager,
                          bool show_subcategory_col,
                          const std::string& undo_dir,
                          CategoryLanguage category_language = CategoryLanguage::English,
-                         QWidget* parent = nullptr);
+                         QWidget* parent = nullptr,
+                         UserLearningStore* learning_store = nullptr);
+    /**
+     * @brief Create the review dialog using an explicit storage provider.
+     * @param db_manager Categorization cache/taxonomy database manager.
+     * @param storage_provider Provider responsible for move/undo operations.
+     * @param show_subcategory_col Whether the subcategory column is visible initially.
+     * @param undo_dir Directory used to persist undo move plans.
+     * @param category_language Language used for displayed category labels.
+     * @param parent Parent widget.
+     * @param learning_store Optional store for user-approved learning examples.
+     */
     CategorizationDialog(DatabaseManager* db_manager,
                          IStorageProvider& storage_provider,
                          bool show_subcategory_col,
                          const std::string& undo_dir,
                          CategoryLanguage category_language = CategoryLanguage::English,
-                         QWidget* parent = nullptr);
+                         QWidget* parent = nullptr,
+                         UserLearningStore* learning_store = nullptr);
 
     void set_show_subcategory_column(bool enabled);
     bool show_subcategory_column_enabled() const { return show_subcategory_column; }
@@ -50,6 +72,14 @@ public:
 #endif
 
     bool is_dialog_valid() const;
+    /**
+     * @brief Populate and display categorized results in the review dialog.
+     * @param categorized_files Results to review.
+     * @param base_dir_override Optional base directory override for generated destinations.
+     * @param include_subdirectories Whether results came from a recursive scan.
+     * @param allow_image_renames Whether image rename-only controls are allowed.
+     * @param allow_document_renames Whether document rename-only controls are allowed.
+     */
     void show_results(const std::vector<CategorizedFile>& categorized_files,
                       const std::string& base_dir_override = std::string(),
                       bool include_subdirectories = false,
@@ -85,6 +115,7 @@ private:
     static constexpr int kOriginalSubcategoryRole = Qt::UserRole + 11;
     static constexpr int kCanonicalCategoryRole = Qt::UserRole + 12;
     static constexpr int kCanonicalSubcategoryRole = Qt::UserRole + 13;
+    static constexpr int kLearningContextRole = Qt::UserRole + 14;
 
     enum Column {
         ColumnSelect = 0,
@@ -120,7 +151,11 @@ private:
     void setup_ui();
     void populate_model();
     void ensure_unique_suggested_names_in_model();
-    void record_categorization_to_db();
+    /**
+     * @brief Persist reviewed categorization results and optionally record approved learning examples.
+     * @param learn_approved_mappings True to store user-approved mappings in the learning store.
+     */
+    void record_categorization_to_db(bool learn_approved_mappings = false);
     void on_confirm_and_sort_button_clicked();
     void on_continue_later_button_clicked();
     void on_undo_button_clicked();
@@ -230,6 +265,7 @@ private:
     void on_bulk_edit_clicked();
 
     DatabaseManager* db_manager;
+    UserLearningStore* learning_store_{nullptr};
     IStorageProvider* storage_provider_{nullptr};
     CategoryLanguage category_language_{CategoryLanguage::English};
     bool show_subcategory_column;
