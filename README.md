@@ -94,22 +94,17 @@ AI File Sorter can run entirely on your device, using local AI models such as Ll
 
 ## Changelog
 
-## [1.8.0] - 2026-04-02
+## [1.8.0] - 2026-04-23
 
-- New plugin system with install, update, and removal via a dedicated Plugins menu.
-- Install plugins locally (.aifsplugin) or fetch them from an online catalog.
-- New OneDrive plugin with improved sync handling, safer moves, and better undo support.
-
-## [1.7.3] - 2026-03-22
-
-- Non-English categorization is now more reliable: files are categorized canonically in English first, then translated into the selected category language. This change is due to LLM language limitations.
-- App updates now support separate update streams for Windows, macOS, and Linux, while still accepting the legacy single-stream manifest format for newer clients.
-- Windows feeds can now provide a direct installer URL plus SHA-256 checksum so the app can download the installer, show download progress, verify its integrity, and launch it after confirmation.
-- The UI translation system was migrated fully to Qt `.ts` / `.qm` catalogs.
-- Local categorization with local LLMs is now more robust.
-- Cached category labels are sanitized more aggressively to avoid malformed UTF-8 data breaking later categorization or display.
-- Misc improvements.
-- Misc bug fixes.
+- Shows the active AI backend in the status bar.
+- Runs as a single instance to avoid duplicate app windows.
+- Improves launcher, GPU, and local model handling for better reliability.
+- Uses Gemma 3 4B IT as the default visual model.
+- Improves image categorization quality and category consistency, including for screenshots and UI captures.
+- Makes image analysis more stable and error messages clearer.
+- Lets you clear categorization and app caches from Settings.
+- Learns locally from your approved review decisions to improve future suggestions.
+- Includes localized Quick Start help and an FAQ link.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 

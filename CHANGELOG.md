@@ -1,11 +1,17 @@
 ﻿# Changelog
 
-## [1.8.0] - 2026-04-02
+## [1.8.0] - 2026-04-23
 
-- Added installable storage plugin support, including a dedicated **Plugins** menu and a management dialog for install, uninstall, and update flows.
-- Added local and remote plugin installation paths: plugins can now be installed from `.aifsplugin` archives or fetched on demand from the remote plugin catalog.
-- Added per-runtime plugin packaging/publishing support for Linux, macOS, and Windows, plus helper scripts for building, packaging, and uploading plugin releases.
-- Added a dedicated **OneDrive Storage Support** plugin with stronger sync-aware handling, including move preflight checks, richer undo metadata, Graph-backed identity/revision support when available, and Windows Cloud Files sync-root detection.
+- Added backend status indicator to the status bar.
+- The app now runs as a single instance - opening it again brings the existing window to the front instead of starting a second copy.
+- Restored the app launcher for the non-Microsoft Store versions of the app and improved GPU selection, now preferring CUDA over Vulkan when both are available.
+- Reworked local visual model handling for better reliability and compatibility.
+- Adde Gemma 3 4B IT and set it as the default visual model.
+- Improved image categorization quality and consistency by preserving image descriptions, using richer prompt context, adding special handling for screenshots and UI captures, and reducing drift between equivalent category labels.
+- Improved image analysis stability and made errors easier to understand.
+- Added options to clear categorization and app caches.
+- Added local learning from your review decisions to improve future suggestions.
+- Added localized Quick Start help and an FAQ link.
 
 ## [1.7.3] - 2026-03-22
 
