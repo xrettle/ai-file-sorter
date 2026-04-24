@@ -1053,6 +1053,15 @@ Procedure: Translate `&Quick Start Guide`, `&FAQ`, and `Quick Start Guide` throu
 Expected outcome: Each supported language returns the expected localized labels.
 Run: `./build-tests/ai_file_sorter_tests "Quick Start and FAQ help labels are translated for all supported UI languages"`
 
+### `tests/run_translation_tests.sh`
+
+#### Translation catalog sync check
+Purpose: Ensure the committed `.ts` catalogs do not miss any currently used GUI source strings.
+Setup: Create temporary copies of all supported UI language catalogs and locate Qt 6 `lupdate`/`lrelease`.
+Procedure: Run `lupdate` against `app/startapp_windows.cpp`, `app/lib/*.cpp`, and `app/include/*.hpp`, then scan the temporary catalogs for newly introduced `unfinished` entries.
+Expected outcome: No temporary catalog contains unfinished entries, which means the source tree and translation catalogs are in sync.
+Run: `./tests/run_translation_tests.sh`
+
 ### `tests/unit/test_whitelist_and_prompt.cpp`
 
 #### Test case: WhitelistStore seeds built-in presets when empty

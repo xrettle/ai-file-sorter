@@ -5,9 +5,25 @@ BUILD_DIR="$ROOT_DIR/tests/build"
 mkdir -p "$BUILD_DIR"
 mkdir -p "$BUILD_DIR/i18n"
 
-if rg -n '<translation type="unfinished"' "$ROOT_DIR"/app/resources/i18n/*.ts >/dev/null; then
+TS_FILES=(
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_fr.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_de.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_it.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_es.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_nl.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_tr.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_ko.ts"
+)
+
+LUPDATE_SOURCES=(
+    "$ROOT_DIR/app/startapp_windows.cpp"
+    "$ROOT_DIR"/app/lib/*.cpp
+    "$ROOT_DIR"/app/include/*.hpp
+)
+
+if rg -n '<translation type="unfinished"' "${TS_FILES[@]}" >/dev/null; then
     echo "Unfinished translations remain in app/resources/i18n" >&2
-    rg -n '<translation type="unfinished"' "$ROOT_DIR"/app/resources/i18n/*.ts >&2
+    rg -n '<translation type="unfinished"' "${TS_FILES[@]}" >&2
     exit 1
 fi
 
@@ -118,6 +134,65 @@ find_qt6_lrelease() {
     return 1
 }
 
+find_qt6_lupdate() {
+    local candidate qt_host_dir
+
+    for candidate in lupdate6 lupdate-qt6; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            command -v "$candidate"
+            return 0
+        fi
+    done
+
+    if [[ -n "${QTPATHS6:-}" ]]; then
+        while IFS= read -r qt_host_dir; do
+            if [[ -n "$qt_host_dir" && -x "$qt_host_dir/lupdate" ]]; then
+                printf '%s\n' "$qt_host_dir/lupdate"
+                return 0
+            fi
+        done < <(
+            "$QTPATHS6" --query QT_HOST_LIBEXECS 2>/dev/null || true
+            "$QTPATHS6" --query QT_HOST_BINS 2>/dev/null || true
+        )
+    fi
+
+    if [[ -n "${QMAKE6:-}" ]]; then
+        while IFS= read -r qt_host_dir; do
+            if [[ -n "$qt_host_dir" && -x "$qt_host_dir/lupdate" ]]; then
+                printf '%s\n' "$qt_host_dir/lupdate"
+                return 0
+            fi
+        done < <(
+            "$QMAKE6" -query QT_HOST_LIBEXECS 2>/dev/null || true
+            "$QMAKE6" -query QT_HOST_BINS 2>/dev/null || true
+            "$QMAKE6" -query QT_INSTALL_BINS 2>/dev/null || true
+        )
+    fi
+
+    for candidate in \
+        /usr/lib/qt6/libexec/lupdate \
+        /usr/lib/qt6/bin/lupdate \
+        /opt/homebrew/bin/lupdate \
+        /opt/homebrew/opt/qt/share/qt/libexec/lupdate \
+        /opt/homebrew/opt/qtbase/share/qt/libexec/lupdate \
+        /usr/local/opt/qtbase/share/qt/libexec/lupdate; do
+        if [[ -x "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    if command -v lupdate >/dev/null 2>&1; then
+        candidate="$(command -v lupdate)"
+        if "$candidate" -version 2>&1 | grep -Eq 'Qt[^0-9]*6|version 6'; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
 QMAKE6="$(find_qt6_path_tool qmake6 /usr/lib/qt6/bin/qmake6 || true)"
 QTPATHS6="$(find_qt6_path_tool qtpaths6 /usr/lib/qt6/bin/qtpaths6 || true)"
 
@@ -176,9 +251,33 @@ else
 fi
 
 LRELEASE="$(find_qt6_lrelease || true)"
+LUPDATE="$(find_qt6_lupdate || true)"
 
 if [[ -z "$LRELEASE" ]]; then
     echo "Could not find a Qt 6 lrelease binary. Install qt6-l10n-tools or set LRELEASE=/path/to/qt6/lrelease" >&2
+    exit 1
+fi
+
+if [[ -z "$LUPDATE" ]]; then
+    echo "Could not find a Qt 6 lupdate binary. Install qt6-l10n-tools or set LUPDATE=/path/to/qt6/lupdate" >&2
+    exit 1
+fi
+
+sync_tmp_dir="$(mktemp -d "$BUILD_DIR/translation-sync.XXXXXX")"
+cleanup_translation_sync() {
+    rm -rf "$sync_tmp_dir"
+}
+trap cleanup_translation_sync EXIT
+
+for ts_file in "${TS_FILES[@]}"; do
+    cp "$ts_file" "$sync_tmp_dir/"
+done
+
+"$LUPDATE" "${LUPDATE_SOURCES[@]}" -ts "$sync_tmp_dir"/aifilesorter_*.ts -no-obsolete >/dev/null
+
+if rg -n '<translation type="unfinished"' "$sync_tmp_dir"/aifilesorter_*.ts >/dev/null; then
+    echo "Current GUI source contains strings missing from the translation catalogs" >&2
+    rg -n '<translation type="unfinished"' "$sync_tmp_dir"/aifilesorter_*.ts >&2
     exit 1
 fi
 
