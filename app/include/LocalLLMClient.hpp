@@ -5,6 +5,7 @@
 #include "llama.h"
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -91,4 +92,7 @@ private:
     StatusCallback status_callback_;
     FallbackDecisionCallback fallback_decision_callback_;
     std::vector<Status> pending_statuses_;
+    std::optional<std::string> original_gpu_backend_env_;
+    std::optional<std::string> original_llama_arg_device_env_;
+    std::optional<std::string> original_ggml_disable_cuda_env_;
 };

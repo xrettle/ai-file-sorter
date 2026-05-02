@@ -1214,6 +1214,13 @@ void AnalysisCoordinator::execute()
                         break;
                     }
                 }
+                if (analyzer) {
+                    if (app_.core_logger) {
+                        app_.core_logger->info(
+                            "Releasing visual analyzer before downstream LLM stages to free resources.");
+                    }
+                    analyzer.reset();
+                }
             }
         }
 

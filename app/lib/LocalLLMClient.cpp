@@ -44,6 +44,71 @@
 }
 #endif
 
+static std::optional<std::string> read_env_value(const char* key) {
+    const char* value = std::getenv(key);
+    if (!value) {
+        return std::nullopt;
+    }
+    return std::string(value);
+}
+
+static void restore_env_var(const char* key, const std::optional<std::string>& value) {
+#if defined(_WIN32)
+    _putenv_s(key, value ? value->c_str() : "");
+#else
+    if (value) {
+        setenv(key, value->c_str(), 1);
+    } else {
+        unsetenv(key);
+    }
+#endif
+}
+
+struct BackendEnvSnapshot {
+    std::optional<std::string> gpu_backend;
+    std::optional<std::string> llama_arg_device;
+    std::optional<std::string> ggml_disable_cuda;
+};
+
+static BackendEnvSnapshot capture_backend_env() {
+    return {read_env_value("AI_FILE_SORTER_GPU_BACKEND"),
+            read_env_value("LLAMA_ARG_DEVICE"),
+            read_env_value("GGML_DISABLE_CUDA")};
+}
+
+static void restore_backend_env(const BackendEnvSnapshot& snapshot) {
+    restore_env_var("AI_FILE_SORTER_GPU_BACKEND", snapshot.gpu_backend);
+    restore_env_var("LLAMA_ARG_DEVICE", snapshot.llama_arg_device);
+    restore_env_var("GGML_DISABLE_CUDA", snapshot.ggml_disable_cuda);
+}
+
+class ScopedBackendEnvRestore {
+public:
+    ScopedBackendEnvRestore()
+        : snapshot_(capture_backend_env()) {}
+
+    ScopedBackendEnvRestore(const ScopedBackendEnvRestore&) = delete;
+    ScopedBackendEnvRestore& operator=(const ScopedBackendEnvRestore&) = delete;
+
+    ~ScopedBackendEnvRestore() {
+        if (active_) {
+            restore_backend_env(snapshot_);
+        }
+    }
+
+    void restore_now() {
+        if (!active_) {
+            return;
+        }
+        restore_backend_env(snapshot_);
+        active_ = false;
+    }
+
+private:
+    BackendEnvSnapshot snapshot_;
+    bool active_{true};
+};
+
 
 namespace {
 
@@ -1661,7 +1726,7 @@ bool finalize_cuda_estimate(const LayerMetrics& metrics,
     }
 
     result.layers = std::clamp<int32_t>(estimated_layers, 1, metrics.total_layers);
-    result.reason = "estimated from CUDA memory headroom";
+    result.reason = "estimated from GPU memory headroom";
     return true;
 }
 
@@ -2176,17 +2241,16 @@ bool llama_logs_enabled_from_env()
     return value != "0" && value != "false" && value != "off" && value != "no";
 }
 
-struct ModelPreparationResult {
-    llama_model_params params;
-    std::optional<LocalLLMClient::Status> status;
-};
-
-
 LocalLLMClient::LocalLLMClient(const std::string& model_path,
                                FallbackDecisionCallback fallback_decision_callback)
     : model_path(model_path),
-      fallback_decision_callback_(std::move(fallback_decision_callback))
+      fallback_decision_callback_(std::move(fallback_decision_callback)),
+      original_gpu_backend_env_(read_env_value("AI_FILE_SORTER_GPU_BACKEND")),
+      original_llama_arg_device_env_(read_env_value("LLAMA_ARG_DEVICE")),
+      original_ggml_disable_cuda_env_(read_env_value("GGML_DISABLE_CUDA"))
 {
+    ScopedBackendEnvRestore backend_env_guard;
+
     auto logger = Logger::get_logger("core_logger");
     if (logger) {
         logger->info("Initializing local LLM client with model '{}'", model_path);
@@ -2204,6 +2268,7 @@ LocalLLMClient::LocalLLMClient(const std::string& model_path,
 
     model_params = load_model_or_throw(model_params, logger);
     configure_context(context_length, model_params);
+    backend_env_guard.restore_now();
 }
 
 
@@ -2220,8 +2285,16 @@ void LocalLLMClient::configure_llama_logging(const std::shared_ptr<spdlog::logge
 }
 
 
-ModelPreparationResult build_model_params_for_path(const std::string& model_path,
-                                                   const std::shared_ptr<spdlog::logger>& logger) {
+namespace {
+
+struct ModelPreparationResult {
+    llama_model_params params;
+    std::optional<LocalLLMClient::Status> status;
+};
+
+ModelPreparationResult build_model_preparation_result_for_path(
+    const std::string& model_path,
+    const std::shared_ptr<spdlog::logger>& logger) {
     load_ggml_backends_once(logger);
     ModelPreparationResult result;
     result.params = llama_model_default_params();
@@ -2290,9 +2363,17 @@ ModelPreparationResult build_model_params_for_path(const std::string& model_path
     return result;
 }
 
+} // namespace
+
+llama_model_params build_model_params_for_path(const std::string& model_path,
+                                               const std::shared_ptr<spdlog::logger>& logger)
+{
+    return build_model_preparation_result_for_path(model_path, logger).params;
+}
+
 llama_model_params LocalLLMClient::prepare_model_params(const std::shared_ptr<spdlog::logger>& logger)
 {
-    ModelPreparationResult preparation = build_model_params_for_path(model_path, logger);
+    const ModelPreparationResult preparation = build_model_preparation_result_for_path(model_path, logger);
     if (preparation.status.has_value()) {
         notify_status(*preparation.status);
     }
@@ -2351,7 +2432,9 @@ bool configure_cuda_backend(const std::string& model_path, llama_model_params& p
 }
 
 PreparedModelParamsResult prepare_model_params_result_for_testing(const std::string& model_path) {
-    const ModelPreparationResult preparation = ::build_model_params_for_path(model_path, nullptr);
+    ScopedBackendEnvRestore backend_env_guard;
+    const ModelPreparationResult preparation = build_model_preparation_result_for_path(model_path, nullptr);
+    backend_env_guard.restore_now();
     return {preparation.params, preparation.status};
 }
 
@@ -2414,6 +2497,7 @@ llama_model_params LocalLLMClient::load_model_or_throw(llama_model_params model_
             }
             throw std::runtime_error("GPU backend failed to initialize and CPU fallback was declined.");
         }
+        ScopedBackendEnvRestore backend_env_guard;
         set_env_var("AI_FILE_SORTER_GPU_BACKEND", "cpu");
         set_env_var("LLAMA_ARG_DEVICE", "cpu");
         notify_status(Status::GpuFallbackToCpu);
@@ -2555,6 +2639,7 @@ std::string LocalLLMClient::generate_response(const std::string& prompt,
                 }
                 llama_model_params cpu_params = llama_model_default_params();
                 cpu_params.n_gpu_layers = 0;
+                ScopedBackendEnvRestore backend_env_guard;
                 set_env_var("AI_FILE_SORTER_GPU_BACKEND", "cpu");
                 set_env_var("LLAMA_ARG_DEVICE", "cpu");
                 set_env_var("GGML_DISABLE_CUDA", "1");
@@ -2679,6 +2764,7 @@ std::string LocalLLMClient::generate_response(const std::string& prompt,
                 }
                 llama_model_params cpu_params = llama_model_default_params();
                 cpu_params.n_gpu_layers = 0;
+                ScopedBackendEnvRestore backend_env_guard;
                 set_env_var("AI_FILE_SORTER_GPU_BACKEND", "cpu");
                 set_env_var("LLAMA_ARG_DEVICE", "cpu");
                 set_env_var("GGML_DISABLE_CUDA", "1");
@@ -2759,6 +2845,9 @@ LocalLLMClient::~LocalLLMClient() {
         logger->debug("Destroying LocalLLMClient for model '{}'", model_path);
     }
     if (model) llama_model_free(model);
+    restore_env_var("AI_FILE_SORTER_GPU_BACKEND", original_gpu_backend_env_);
+    restore_env_var("LLAMA_ARG_DEVICE", original_llama_arg_device_env_);
+    restore_env_var("GGML_DISABLE_CUDA", original_ggml_disable_cuda_env_);
 }
 
 void LocalLLMClient::set_prompt_logging_enabled(bool enabled)
