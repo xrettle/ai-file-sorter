@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace WindowsCudaProbe {
 
@@ -23,5 +25,13 @@ ProbeResult probe(const std::optional<std::filesystem::path>& ggml_directory = s
 std::optional<std::filesystem::path> best_runtime_library_path();
 int installed_runtime_version_token();
 std::string best_runtime_library_name();
+
+#ifdef AI_FILE_SORTER_TEST_BUILD
+namespace TestAccess {
+int runtime_version_rank(std::string_view file_name);
+std::vector<std::filesystem::path> rank_runtime_candidates(
+    const std::vector<std::filesystem::path>& runtime_paths);
+} // namespace TestAccess
+#endif
 
 } // namespace WindowsCudaProbe
