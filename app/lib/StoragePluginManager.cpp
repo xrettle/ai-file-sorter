@@ -990,7 +990,7 @@ bool StoragePluginManager::materialize_manifest_for_install(
 
     const auto installed_entry_point =
         install_dir / relative_install_target(manifest, manifest.entry_point);
-    materialized_manifest->entry_point = installed_entry_point.string();
+    materialized_manifest->entry_point = installed_entry_point.generic_string();
     materialized_manifest->source_path.clear();
 
 #ifndef _WIN32

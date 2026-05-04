@@ -47,6 +47,32 @@ QString path_to_program(const StoragePluginManifest& manifest)
     return QString::fromStdString(manifest.entry_point);
 }
 
+QProcessEnvironment plugin_process_environment()
+{
+    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    const QString app_dir = QCoreApplication::applicationDirPath();
+    if (app_dir.isEmpty()) {
+        return environment;
+    }
+
+#ifdef _WIN32
+    const QString path_key = environment.contains(QStringLiteral("Path"))
+        ? QStringLiteral("Path")
+        : QStringLiteral("PATH");
+    const QString separator = QStringLiteral(";");
+#else
+    const QString path_key = QStringLiteral("PATH");
+    const QString separator = QStringLiteral(":");
+#endif
+
+    const QString existing = environment.value(path_key);
+    const QStringList entries = existing.split(separator, Qt::SkipEmptyParts);
+    if (!entries.contains(app_dir, Qt::CaseInsensitive)) {
+        environment.insert(path_key, app_dir + (existing.isEmpty() ? QString() : separator + existing));
+    }
+    return environment;
+}
+
 bool invoke_process(const StoragePluginManifest& manifest,
                     const QJsonObject& request,
                     QJsonObject* response,
@@ -61,6 +87,7 @@ bool invoke_process(const StoragePluginManifest& manifest,
     }
 
     QProcess process;
+    process.setProcessEnvironment(plugin_process_environment());
     if (!manifest.source_path.empty()) {
         process.setWorkingDirectory(QString::fromStdString(manifest.source_path.parent_path().string()));
     }
