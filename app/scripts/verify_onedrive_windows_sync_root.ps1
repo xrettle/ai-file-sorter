@@ -57,6 +57,7 @@ if (-not (Test-Path $resolvedSyncRoot)) {
 }
 
 $env:AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT = $resolvedSyncRoot
+$env:AI_FILE_SORTER_RUN_REAL_ONEDRIVE_TESTS = "1"
 $env:QT_QPA_PLATFORM = "offscreen"
 
 $filters = @(

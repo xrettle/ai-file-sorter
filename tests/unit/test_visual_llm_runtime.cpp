@@ -17,6 +17,21 @@ void write_download_metadata(const std::filesystem::path& artifact_path, const s
     meta << "content_length=1\n";
 }
 
+struct VisualRuntimeTempEnv {
+    TempDir home_dir;
+    TempDir appdata_dir;
+    EnvVarGuard home_guard;
+    EnvVarGuard appdata_guard;
+    EnvVarGuard localappdata_guard;
+
+    VisualRuntimeTempEnv()
+        : home_guard("HOME", home_dir.path().string()),
+          appdata_guard("APPDATA", appdata_dir.path().string()),
+          localappdata_guard("LOCALAPPDATA", appdata_dir.path().string())
+    {
+    }
+};
+
 } // namespace
 
 TEST_CASE("Default visual model descriptor exposes the MTMD backend catalog") {
@@ -56,8 +71,7 @@ TEST_CASE("Default visual model descriptor exposes the MTMD backend catalog") {
 }
 
 TEST_CASE("VisualLlmRuntime resolves the active backend through descriptor artifacts") {
-    TempDir home_dir;
-    EnvVarGuard home_guard("HOME", home_dir.path().string());
+    VisualRuntimeTempEnv env;
     const std::string model_url = "https://example.com/gemma-3-4b-it-Q4_K_M.gguf";
     const std::string mmproj_url = "https://example.com/mmproj-gemma-3-4b-it-Q4_K_M.gguf";
     EnvVarGuard model_guard("GEMMA3_4B_MODEL_URL", model_url);
@@ -89,8 +103,7 @@ TEST_CASE("VisualLlmRuntime resolves the active backend through descriptor artif
 }
 
 TEST_CASE("VisualLlmRuntime reports missing backend URLs before resolving artifacts") {
-    TempDir home_dir;
-    EnvVarGuard home_guard("HOME", home_dir.path().string());
+    VisualRuntimeTempEnv env;
     EnvVarGuard model_guard("GEMMA3_4B_MODEL_URL", std::nullopt);
     EnvVarGuard mmproj_guard("GEMMA3_4B_MMPROJ_URL", std::nullopt);
 
@@ -100,8 +113,7 @@ TEST_CASE("VisualLlmRuntime reports missing backend URLs before resolving artifa
 }
 
 TEST_CASE("VisualLlmRuntime resolves a non-default backend by id") {
-    TempDir home_dir;
-    EnvVarGuard home_guard("HOME", home_dir.path().string());
+    VisualRuntimeTempEnv env;
     const std::string model_url = "https://example.com/gemma-3-4b-it-Q4_K_M.gguf";
     const std::string mmproj_url = "https://example.com/mmproj-gemma-3-4b-it-Q4_K_M.gguf";
     EnvVarGuard model_guard("GEMMA3_4B_MODEL_URL", model_url);
@@ -128,8 +140,7 @@ TEST_CASE("VisualLlmRuntime resolves a non-default backend by id") {
 }
 
 TEST_CASE("VisualLlmRuntime accepts legacy generic mmproj files when metadata matches the backend") {
-    TempDir home_dir;
-    EnvVarGuard home_guard("HOME", home_dir.path().string());
+    VisualRuntimeTempEnv env;
     const std::string model_url = "https://example.com/gemma-3-4b-it-Q4_K_M.gguf";
     const std::string mmproj_url = "https://example.com/mmproj-model-f16.gguf";
     EnvVarGuard model_guard("GEMMA3_4B_MODEL_URL", model_url);
@@ -156,8 +167,7 @@ TEST_CASE("VisualLlmRuntime accepts legacy generic mmproj files when metadata ma
 }
 
 TEST_CASE("VisualLlmRuntime accepts the legacy LLaVA generic mmproj without metadata") {
-    TempDir home_dir;
-    EnvVarGuard home_guard("HOME", home_dir.path().string());
+    VisualRuntimeTempEnv env;
     const std::string model_url = "https://example.com/llava-model.gguf";
     const std::string mmproj_url = "https://example.com/mmproj-model-f16.gguf";
     EnvVarGuard model_guard("LLAVA_MODEL_URL", model_url);
@@ -182,8 +192,7 @@ TEST_CASE("VisualLlmRuntime accepts the legacy LLaVA generic mmproj without meta
 }
 
 TEST_CASE("VisualLlmRuntime does not misattribute a legacy generic mmproj from another backend") {
-    TempDir home_dir;
-    EnvVarGuard home_guard("HOME", home_dir.path().string());
+    VisualRuntimeTempEnv env;
     const std::string gemma_model_url = "https://example.com/gemma-3-4b-it-Q4_K_M.gguf";
     const std::string gemma_mmproj_url = "https://example.com/mmproj-model-f16.gguf";
     const std::string llava_mmproj_url = "https://example.com/llava-mmproj-model-f16.gguf";

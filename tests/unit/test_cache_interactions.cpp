@@ -1680,17 +1680,20 @@ TEST_CASE("StorageProviderRegistry resolves installed OneDrive external connecto
 
 #ifdef _WIN32
 TEST_CASE("OneDriveStorageProvider verifies a real Windows OneDrive sync root via Cloud Files API") {
+    const char* enabled = std::getenv("AI_FILE_SORTER_RUN_REAL_ONEDRIVE_TESTS");
+    const std::string enabled_value = enabled ? std::string(enabled) : std::string();
+    if (enabled_value != "1" && enabled_value != "true" && enabled_value != "TRUE") {
+        SKIP("Set AI_FILE_SORTER_RUN_REAL_ONEDRIVE_TESTS=1 to run real Windows OneDrive sync-root integration tests.");
+    }
+
     const char* configured_sync_root = std::getenv("AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT");
-    const char* default_sync_root = std::getenv("OneDrive");
     const std::string sync_root =
         (configured_sync_root && *configured_sync_root != '\0')
             ? std::string(configured_sync_root)
-            : ((default_sync_root && *default_sync_root != '\0')
-                   ? std::string(default_sync_root)
-                   : std::string());
+            : std::string();
 
     if (sync_root.empty()) {
-        SKIP("Set AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT (or OneDrive) on a Windows machine with a real OneDrive sync root.");
+        SKIP("Set AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT on a Windows machine with a real OneDrive sync root.");
     }
     if (!std::filesystem::exists(sync_root)) {
         SKIP("Configured OneDrive sync root path does not exist on this machine.");
@@ -1705,17 +1708,20 @@ TEST_CASE("OneDriveStorageProvider verifies a real Windows OneDrive sync root vi
 }
 
 TEST_CASE("External OneDrive connector verifies a real Windows OneDrive sync root via Cloud Files API") {
+    const char* enabled = std::getenv("AI_FILE_SORTER_RUN_REAL_ONEDRIVE_TESTS");
+    const std::string enabled_value = enabled ? std::string(enabled) : std::string();
+    if (enabled_value != "1" && enabled_value != "true" && enabled_value != "TRUE") {
+        SKIP("Set AI_FILE_SORTER_RUN_REAL_ONEDRIVE_TESTS=1 to run real Windows OneDrive sync-root integration tests.");
+    }
+
     const char* configured_sync_root = std::getenv("AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT");
-    const char* default_sync_root = std::getenv("OneDrive");
     const std::string sync_root =
         (configured_sync_root && *configured_sync_root != '\0')
             ? std::string(configured_sync_root)
-            : ((default_sync_root && *default_sync_root != '\0')
-                   ? std::string(default_sync_root)
-                   : std::string());
+            : std::string();
 
     if (sync_root.empty()) {
-        SKIP("Set AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT (or OneDrive) on a Windows machine with a real OneDrive sync root.");
+        SKIP("Set AI_FILE_SORTER_TEST_ONEDRIVE_SYNC_ROOT on a Windows machine with a real OneDrive sync root.");
     }
     if (!std::filesystem::exists(sync_root)) {
         SKIP("Configured OneDrive sync root path does not exist on this machine.");
