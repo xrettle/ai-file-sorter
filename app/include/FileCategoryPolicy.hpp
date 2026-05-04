@@ -2,6 +2,7 @@
 
 #include "Types.hpp"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,5 +30,26 @@ struct MainCategorySelection {
  */
 MainCategorySelection determine_main_category_selection(const std::string& file_name,
                                                         FileType file_type);
+
+/**
+ * @brief Returns whether the file name belongs to the shared image family rules.
+ * @param file_name Prompt-facing file name or path fragment to inspect.
+ * @return True when the extension matches the supported image-like set.
+ */
+bool is_supported_image_file_name(const std::string& file_name);
+
+/**
+ * @brief Returns whether the file name belongs to the shared document family rules.
+ * @param file_name Prompt-facing file name or path fragment to inspect.
+ * @return True when the extension matches the supported document-like set, including legacy Office binaries.
+ */
+bool is_supported_document_file_name(const std::string& file_name);
+
+/**
+ * @brief Returns the stable main category for shared image/document family files.
+ * @param file_name Prompt-facing file name or path fragment to inspect.
+ * @return Preferred stable main category for supported image/document files, or `std::nullopt` otherwise.
+ */
+std::optional<std::string> preferred_main_category_for_file_name(const std::string& file_name);
 
 } // namespace FileCategoryPolicy

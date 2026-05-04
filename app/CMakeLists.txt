@@ -470,11 +470,6 @@ set(APP_MAIN_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 file(GLOB APP_LIB_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/*.cpp"
 )
-list(APPEND APP_LIB_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/lib/ArtifactCategoryPolicy.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/lib/FileCategoryPolicy.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/lib/ImageCategoryPolicy.cpp"
-)
 set(AIFS_TEST_ONLY_APP_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/MainAppTestAccess.cpp"
 )

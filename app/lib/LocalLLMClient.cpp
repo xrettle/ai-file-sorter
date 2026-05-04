@@ -1,5 +1,5 @@
 #include "LocalLLMClient.hpp"
-#include "DocumentCategoryPolicy.hpp"
+#include "FileCategoryPolicy.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
 #include "TestHooks.hpp"
@@ -794,7 +794,7 @@ std::string categorization_system_prompt(std::string_view file_path, FileType fi
     if (has_marker(file_path, kImageDescriptionMarker)) {
         return image_categorization_system_prompt();
     }
-    if (DocumentCategoryPolicy::is_supported_document_file_name(extract_prompt_file_name(file_path))) {
+    if (FileCategoryPolicy::is_supported_document_file_name(extract_prompt_file_name(file_path))) {
         return document_categorization_system_prompt();
     }
     return generic_file_categorization_system_prompt();
@@ -871,7 +871,7 @@ std::string categorization_user_prompt(const std::string& file_name,
         return build_image_categorization_user_prompt(file_name, file_path, consistency_context);
     }
     if (file_type == FileType::File &&
-        DocumentCategoryPolicy::is_supported_document_file_name(file_name)) {
+        FileCategoryPolicy::is_supported_document_file_name(file_name)) {
         return build_document_categorization_user_prompt(file_name, file_path, consistency_context);
     }
     return build_generic_categorization_user_prompt(file_name,

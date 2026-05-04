@@ -1,9 +1,7 @@
 #include "CategorizationService.hpp"
 
 #include "ArtifactCategoryPolicy.hpp"
-#include "DocumentCategoryPolicy.hpp"
 #include "FileCategoryPolicy.hpp"
-#include "ImageCategoryPolicy.hpp"
 #include "Settings.hpp"
 #include "CategoryLanguage.hpp"
 #include "DatabaseManager.hpp"
@@ -426,13 +424,13 @@ bool has_image_description_context(const std::string& prompt_path) {
 bool is_image_prompt_context(const std::string& prompt_name,
                              FileType file_type) {
     return file_type == FileType::File &&
-           ImageCategoryPolicy::is_supported_image_file_name(prompt_name);
+           FileCategoryPolicy::is_supported_image_file_name(prompt_name);
 }
 
 bool is_document_prompt_context(const std::string& prompt_name,
                                 FileType file_type) {
     return file_type == FileType::File &&
-           DocumentCategoryPolicy::is_supported_document_file_name(prompt_name);
+           FileCategoryPolicy::is_supported_document_file_name(prompt_name);
 }
 
 std::string extract_learning_context_text(const std::string& prompt_path) {
@@ -754,7 +752,7 @@ std::pair<std::string, std::string> normalize_image_category_labels(
         return {category, subcategory};
     }
 
-    const auto stable_main = ImageCategoryPolicy::preferred_main_category_for_file_name(prompt_name);
+    const auto stable_main = FileCategoryPolicy::preferred_main_category_for_file_name(prompt_name);
     if (!stable_main) {
         return {category, subcategory};
     }
@@ -773,7 +771,7 @@ std::pair<std::string, std::string> normalize_document_category_labels(
         return {category, subcategory};
     }
 
-    const auto stable_main = DocumentCategoryPolicy::preferred_main_category_for_file_name(prompt_name);
+    const auto stable_main = FileCategoryPolicy::preferred_main_category_for_file_name(prompt_name);
     if (!stable_main) {
         return {category, subcategory};
     }
