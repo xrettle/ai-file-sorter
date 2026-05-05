@@ -30,7 +30,6 @@ TEST_CASE("Visual CPU fallback detection ignores non-retryable startup failures"
         "The provided multimodal projector does not expose vision capabilities"));
 }
 
-#ifndef _WIN32
 TEST_CASE("Visual CPU fallback decline requests analysis cancellation")
 {
     EnvVarGuard platform_guard("QT_QPA_PLATFORM", "offscreen");
@@ -76,4 +75,57 @@ TEST_CASE("Visual CPU fallback acceptance keeps analysis running")
     CHECK(MainAppTestAccess::prompt_visual_cpu_fallback(window, "VK_ERROR_OUT_OF_DEVICE_MEMORY"));
     CHECK_FALSE(MainAppTestAccess::stop_analysis_requested(window));
 }
-#endif
+
+TEST_CASE("Continue-without-visual-analysis decline requests analysis cancellation")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", "offscreen");
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+    MainApp window(settings, /*development_mode=*/false);
+
+    int prompt_count = 0;
+    MainAppTestAccess::set_continue_without_visual_analysis_prompt_override(
+        window,
+        [&prompt_count]() {
+            ++prompt_count;
+            return false;
+        });
+
+    CHECK_FALSE(MainAppTestAccess::prompt_continue_without_visual_analysis(
+        window,
+        "Visual model artifact is invalid or incomplete (expected GGUF header): model.gguf"));
+    CHECK(MainAppTestAccess::stop_analysis_requested(window));
+    CHECK(prompt_count == 1);
+
+    CHECK_FALSE(MainAppTestAccess::prompt_continue_without_visual_analysis(window, "later retry"));
+    CHECK(prompt_count == 1);
+}
+
+TEST_CASE("Continue-without-visual-analysis acceptance keeps analysis running")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", "offscreen");
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+    MainApp window(settings, /*development_mode=*/false);
+
+    MainAppTestAccess::set_continue_without_visual_analysis_prompt_override(
+        window,
+        []() { return true; });
+
+    CHECK(MainAppTestAccess::prompt_continue_without_visual_analysis(
+        window,
+        "Visual model artifact is invalid or incomplete (expected GGUF header): model.gguf"));
+    CHECK_FALSE(MainAppTestAccess::stop_analysis_requested(window));
+}

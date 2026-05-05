@@ -230,12 +230,27 @@ public:
      */
     static void set_visual_cpu_fallback_prompt_override(MainApp& app, std::function<bool()> prompt);
     /**
+     * @brief Override the continue-without-visual-analysis prompt flow.
+     * @param app MainApp instance.
+     * @param prompt Callback returning whether filename-only continuation is accepted.
+     */
+    static void set_continue_without_visual_analysis_prompt_override(
+        MainApp& app,
+        std::function<bool()> prompt);
+    /**
      * @brief Invoke the visual CPU fallback prompt path.
      * @param app MainApp instance.
      * @param reason Failure reason to report.
      * @return True when CPU retry is accepted.
      */
     static bool prompt_visual_cpu_fallback(MainApp& app, const std::string& reason);
+    /**
+     * @brief Invoke the continue-without-visual-analysis prompt path.
+     * @param app MainApp instance.
+     * @param reason Failure reason to report.
+     * @return True when filename-only continuation is accepted.
+     */
+    static bool prompt_continue_without_visual_analysis(MainApp& app, const std::string& reason);
     /**
      * @brief Return whether analysis cancellation has been requested.
      * @param app MainApp instance.

@@ -260,6 +260,29 @@ Procedure: Invoke the visual CPU fallback prompt path.
 Expected outcome: The prompt returns true and the stop-analysis flag remains false.
 Run: `./build-tests/ai_file_sorter_tests "Visual CPU fallback acceptance keeps analysis running"`
 
+#### Test case: Continue-without-visual-analysis decline requests analysis cancellation
+Purpose: Confirm declining filename-only fallback stops the analysis when visual understanding is unavailable.
+Setup: Build `MainApp` with an override that declines the continue-without-visual-analysis prompt.
+Procedure: Invoke the continue-without-visual-analysis prompt path twice.
+Expected outcome: The first decline sets the stop-analysis flag, and the cached decline is reused without prompting again.
+Run: `./build-tests/ai_file_sorter_tests "Continue-without-visual-analysis decline requests analysis cancellation"`
+
+#### Test case: Continue-without-visual-analysis acceptance keeps analysis running
+Purpose: Confirm accepting filename-only fallback keeps the analysis active when visual understanding is unavailable.
+Setup: Build `MainApp` with an override that accepts the continue-without-visual-analysis prompt.
+Procedure: Invoke the continue-without-visual-analysis prompt path.
+Expected outcome: The prompt returns true and the stop-analysis flag remains false.
+Run: `./build-tests/ai_file_sorter_tests "Continue-without-visual-analysis acceptance keeps analysis running"`
+
+### `tests/unit/test_image_analyzer_factory.cpp`
+
+#### Test case: ImageAnalyzerFactory rejects invalid GGUF artifacts before analyzer startup
+Purpose: Ensure corrupt or partial visual model artifacts fail before GPU preflight or analyzer construction masks the real issue.
+Setup: Build a visual backend descriptor with one-byte `model.gguf` and `mmproj.gguf` files.
+Procedure: Call `ImageAnalyzerFactory::create()` with GPU disabled.
+Expected outcome: Creation throws a clear invalid/incomplete GGUF artifact error.
+Run: `./build-tests/ai_file_sorter_tests "ImageAnalyzerFactory rejects invalid GGUF artifacts before analyzer startup"`
+
 ### `tests/unit/test_main_app_cache_action.cpp` (non-Windows only)
 
 #### Test case: Settings maintenance actions stay separate and follow analysis state

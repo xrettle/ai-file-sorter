@@ -947,6 +947,13 @@ void AnalysisCoordinator::execute()
                 }
             };
 
+            auto confirm_visual_filename_fallback = [&](const std::string& reason) {
+                if (app_.prompt_continue_without_visual_analysis(reason)) {
+                    return;
+                }
+                throw AnalysisCancelled("Visual analysis continuation without image understanding declined.");
+            };
+
             auto create_analyzer = [&]() -> std::unique_ptr<ImageAnalyzer> {
                 return ImageAnalyzerFactory::create(*visual_backend, vision_settings);
             };
@@ -964,15 +971,12 @@ void AnalysisCoordinator::execute()
                         retry_on_cpu,
                         ex.what());
                 }
-                if (!allow_visual_cpu_fallback) {
-                    throw;
-                }
-                if (!retry_on_cpu) {
+                if (!(allow_visual_cpu_fallback && retry_on_cpu)) {
                     skip_visual_analysis = true;
                     skip_visual_reason = ex.what();
                     if (app_.core_logger) {
                         app_.core_logger->warn(
-                            "Visual analysis disabled after non-retryable initialization failure.");
+                            "Visual analysis disabled after initialization failure.");
                     }
                 } else {
                     if (!visual_cpu_fallback_choice.has_value()) {
@@ -1010,6 +1014,7 @@ void AnalysisCoordinator::execute()
             }
 
             if (skip_visual_analysis) {
+                confirm_visual_filename_fallback(skip_visual_reason);
                 if (!skip_visual_reason.empty()) {
                     if (app_.core_logger) {
                         app_.core_logger->warn(
@@ -1035,7 +1040,7 @@ void AnalysisCoordinator::execute()
                     cache_image_date(entry);
                     app_.mark_progress_stage_item_in_progress(ProgressStageId::ImageAnalysis, entry);
                     handle_visual_failure(entry, std::string(), already_renamed, false, visual_only);
-                    app_.mark_progress_stage_item_completed(ProgressStageId::ImageAnalysis, entry);
+                    app_.mark_progress_stage_item_skipped(ProgressStageId::ImageAnalysis, entry);
                 }
             } else {
                 bool stop_visual_analysis = false;
@@ -1164,6 +1169,10 @@ void AnalysisCoordinator::execute()
                                                               already_renamed,
                                                               true,
                                                               visual_only);
+                                        app_.mark_progress_stage_item_skipped(
+                                            ProgressStageId::ImageAnalysis,
+                                            entry);
+                                        confirm_visual_filename_fallback(init_ex.what());
                                         app_.append_progress(to_utf8(app_.tr(
                                             "[VISION] Visual analysis disabled for remaining images.")));
                                         stop_visual_analysis = true;
@@ -1182,7 +1191,7 @@ void AnalysisCoordinator::execute()
                                 }
                                 handle_visual_failure(entry, ex.what(), already_renamed, true, visual_only);
                             }
-                            app_.mark_progress_stage_item_completed(ProgressStageId::ImageAnalysis, entry);
+                            app_.mark_progress_stage_item_skipped(ProgressStageId::ImageAnalysis, entry);
                             break;
                         }
                     }
@@ -1208,8 +1217,8 @@ void AnalysisCoordinator::execute()
                                                   pending_renamed,
                                                   false,
                                                   pending_visual_only);
-                            app_.mark_progress_stage_item_completed(ProgressStageId::ImageAnalysis,
-                                                                    pending);
+                            app_.mark_progress_stage_item_skipped(ProgressStageId::ImageAnalysis,
+                                                                  pending);
                         }
                         break;
                     }
@@ -1377,7 +1386,7 @@ void AnalysisCoordinator::execute()
                     app_.mark_progress_stage_item_completed(ProgressStageId::DocumentAnalysis, entry);
                 } catch (const std::exception& ex) {
                     handle_document_failure(entry, ex.what(), already_renamed, true, document_only);
-                    app_.mark_progress_stage_item_completed(ProgressStageId::DocumentAnalysis, entry);
+                    app_.mark_progress_stage_item_skipped(ProgressStageId::DocumentAnalysis, entry);
                 }
             }
         }

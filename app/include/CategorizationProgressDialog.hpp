@@ -47,6 +47,7 @@ public:
     void mark_stage_item_pending(StageId stage_id, const FileEntry& entry);
     void mark_stage_item_in_progress(StageId stage_id, const FileEntry& entry);
     void mark_stage_item_completed(StageId stage_id, const FileEntry& entry);
+    void mark_stage_item_skipped(StageId stage_id, const FileEntry& entry);
 
 protected:
     void changeEvent(QEvent* event) override;
@@ -56,7 +57,8 @@ private:
         NotApplicable,
         Pending,
         InProgress,
-        Completed
+        Completed,
+        Skipped
     };
 
     enum class DisplayType {

@@ -261,6 +261,12 @@ void CategorizationProgressDialog::mark_stage_item_completed(StageId stage_id,
     set_stage_item_status(stage_id, entry, ItemStatus::Completed);
 }
 
+void CategorizationProgressDialog::mark_stage_item_skipped(StageId stage_id,
+                                                           const FileEntry& entry)
+{
+    set_stage_item_status(stage_id, entry, ItemStatus::Skipped);
+}
+
 
 void CategorizationProgressDialog::request_stop()
 {
@@ -644,6 +650,10 @@ void CategorizationProgressDialog::refresh_row(int row)
                 stage_item->setText(QStringLiteral("✓ %1").arg(tr("Complete")));
                 stage_item->setForeground(QColor(46, 125, 50));
                 break;
+            case ItemStatus::Skipped:
+                stage_item->setText(QStringLiteral("! %1").arg(tr("Skipped")));
+                stage_item->setForeground(QColor(245, 124, 0));
+                break;
         }
 
         stage_item->setTextAlignment(Qt::AlignCenter);
@@ -678,6 +688,7 @@ void CategorizationProgressDialog::refresh_summary()
         const ItemStatus status = it->second.stage_statuses[stage_index(current_stage)];
         switch (status) {
             case ItemStatus::Completed:
+            case ItemStatus::Skipped:
                 ++processed;
                 break;
             case ItemStatus::InProgress:

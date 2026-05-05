@@ -910,6 +910,7 @@ void MainApp::on_analyze_clicked()
     stop_analysis = false;
     text_cpu_fallback_choice_.reset();
     visual_cpu_fallback_choice_.reset();
+    continue_without_visual_analysis_choice_.reset();
     update_analyze_button_state(true);
 
     const bool show_subcategory = use_subcategories_checkbox->isChecked();
@@ -1815,6 +1816,16 @@ void MainApp::mark_progress_stage_item_completed(CategorizationProgressDialog::S
     });
 }
 
+void MainApp::mark_progress_stage_item_skipped(CategorizationProgressDialog::StageId stage_id,
+                                               const FileEntry& entry)
+{
+    run_on_ui_blocking([this, stage_id, entry]() {
+        if (progress_dialog) {
+            progress_dialog->mark_stage_item_skipped(stage_id, entry);
+        }
+    });
+}
+
 bool MainApp::should_abort_analysis() const
 {
     return stop_analysis.load();
@@ -2106,6 +2117,60 @@ bool MainApp::prompt_visual_cpu_fallback(const std::string& reason)
 
     if (core_logger && !reason.empty()) {
         core_logger->warn("Visual GPU fallback accepted: {}", reason);
+    }
+    return true;
+}
+
+bool MainApp::prompt_continue_without_visual_analysis(const std::string& reason)
+{
+    if (continue_without_visual_analysis_choice_.has_value()) {
+        return continue_without_visual_analysis_choice_.value();
+    }
+
+    auto show_dialog = [this, &reason]() -> bool {
+#if defined(AI_FILE_SORTER_TEST_BUILD)
+        if (continue_without_visual_analysis_prompt_override_) {
+            return continue_without_visual_analysis_prompt_override_();
+        }
+#endif
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle(tr("Continue without visual analysis?"));
+        box.setText(tr("Image analysis is unavailable."));
+        box.setInformativeText(
+            tr("Continue this analysis using filenames only? Cancel will stop this analysis."));
+        if (!reason.empty()) {
+            box.setDetailedText(QString::fromStdString(reason));
+        }
+        box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        box.setDefaultButton(QMessageBox::Ok);
+        return box.exec() == QMessageBox::Ok;
+    };
+
+    bool decision = false;
+    if (QThread::currentThread() == thread()) {
+        decision = show_dialog();
+    } else {
+        QMetaObject::invokeMethod(
+            this,
+            [&decision, show_dialog]() mutable { decision = show_dialog(); },
+            Qt::BlockingQueuedConnection);
+    }
+
+    continue_without_visual_analysis_choice_ = decision;
+
+    if (!decision) {
+        stop_analysis = true;
+        append_progress(
+            to_utf8(tr("[WARN] Continue without visual analysis declined. Cancelling analysis.")));
+        if (core_logger && !reason.empty()) {
+            core_logger->warn("Continuation without visual analysis declined: {}", reason);
+        }
+        return false;
+    }
+
+    if (core_logger && !reason.empty()) {
+        core_logger->warn("Continuing without visual analysis after failure: {}", reason);
     }
     return true;
 }

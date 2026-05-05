@@ -1,5 +1,6 @@
 #include "ImageAnalyzerFactory.hpp"
 
+#include "GgufFileValidation.hpp"
 #include "LlavaImageAnalyzer.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
@@ -12,6 +13,7 @@
 #include <cstdlib>
 #include <optional>
 #include <sstream>
+#include <string_view>
 #include <stdexcept>
 
 namespace {
@@ -33,6 +35,21 @@ std::string trim_copy(std::string value)
     value.erase(value.begin(), std::find_if(value.begin(), value.end(), not_space));
     value.erase(std::find_if(value.rbegin(), value.rend(), not_space).base(), value.end());
     return value;
+}
+
+void validate_visual_artifact_file(const std::filesystem::path& path, const char* label)
+{
+    if (!std::filesystem::exists(path)) {
+        throw std::runtime_error(std::string("Visual ") + label +
+                                 " artifact could not be opened: " +
+                                 Utils::path_to_utf8(path));
+    }
+
+    if (!has_gguf_header(path)) {
+        throw std::runtime_error(std::string("Visual ") + label +
+                                 " artifact is invalid or incomplete (expected GGUF header): " +
+                                 Utils::path_to_utf8(path));
+    }
 }
 
 std::optional<bool> read_env_bool(const char* key)
@@ -183,6 +200,14 @@ std::unique_ptr<ImageAnalyzer> ImageAnalyzerFactory::create(const VisualLlmRunti
         throw std::runtime_error("Visual backend descriptor is missing.");
     }
 
+    const auto model_path =
+        require_artifact_path(backend, VisualModelArtifactKind::Model, "model");
+    const auto mmproj_path =
+        require_artifact_path(backend, VisualModelArtifactKind::Mmproj, "mmproj");
+
+    validate_visual_artifact_file(model_path, "model");
+    validate_visual_artifact_file(mmproj_path, "multimodal projector");
+
 #ifdef _WIN32
     if (settings.use_gpu && !should_skip_visual_gpu_preflight()) {
         run_visual_gpu_preflight(backend);
@@ -191,10 +216,6 @@ std::unique_ptr<ImageAnalyzer> ImageAnalyzerFactory::create(const VisualLlmRunti
 
     switch (backend.descriptor->architecture) {
     case VisualModelArchitecture::MtmdProjector: {
-        const auto model_path =
-            require_artifact_path(backend, VisualModelArtifactKind::Model, "model");
-        const auto mmproj_path =
-            require_artifact_path(backend, VisualModelArtifactKind::Mmproj, "mmproj");
         return std::make_unique<LlavaImageAnalyzer>(
             model_path,
             mmproj_path,

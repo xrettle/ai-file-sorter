@@ -260,6 +260,8 @@ private:
                                               const FileEntry& entry);
     void mark_progress_stage_item_completed(CategorizationProgressDialog::StageId stage_id,
                                             const FileEntry& entry);
+    void mark_progress_stage_item_skipped(CategorizationProgressDialog::StageId stage_id,
+                                          const FileEntry& entry);
     bool should_abort_analysis() const;
     void prune_empty_cached_entries_for(const std::string& directory_path);
     void log_cached_highlights();
@@ -313,6 +315,12 @@ private:
     void post_analysis_failure(std::string message);
     bool prompt_text_cpu_fallback(const std::string& reason);
     bool prompt_visual_cpu_fallback(const std::string& reason);
+    /**
+     * @brief Ask whether analysis should continue without visual content analysis.
+     * @param reason Failure reason shown in the dialog details and logs.
+     * @return True to continue with filename-only handling, false to cancel.
+     */
+    bool prompt_continue_without_visual_analysis(const std::string& reason);
     StorageSupportResolution resolve_storage_support(const StorageProviderDetection& detection) const;
 
     friend class MainAppUiBuilder;
@@ -460,6 +468,7 @@ private:
     std::string last_storage_provider_notice_key_;
     std::optional<bool> text_cpu_fallback_choice_;
     std::optional<bool> visual_cpu_fallback_choice_;
+    std::optional<bool> continue_without_visual_analysis_choice_;
     bool should_log_prompts() const;
     void apply_development_logging();
 
@@ -471,6 +480,7 @@ private:
     std::function<void()> llm_selection_runner_override_;
     std::function<bool()> image_analysis_prompt_override_;
     std::function<bool()> visual_cpu_fallback_prompt_override_;
+    std::function<bool()> continue_without_visual_analysis_prompt_override_;
 #endif
 };
 

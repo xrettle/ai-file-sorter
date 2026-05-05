@@ -159,9 +159,22 @@ void MainAppTestAccess::set_visual_cpu_fallback_prompt_override(MainApp& app, st
     app.visual_cpu_fallback_prompt_override_ = std::move(prompt);
 }
 
+void MainAppTestAccess::set_continue_without_visual_analysis_prompt_override(
+    MainApp& app,
+    std::function<bool()> prompt)
+{
+    app.continue_without_visual_analysis_prompt_override_ = std::move(prompt);
+}
+
 bool MainAppTestAccess::prompt_visual_cpu_fallback(MainApp& app, const std::string& reason)
 {
     return app.prompt_visual_cpu_fallback(reason);
+}
+
+bool MainAppTestAccess::prompt_continue_without_visual_analysis(MainApp& app,
+                                                                const std::string& reason)
+{
+    return app.prompt_continue_without_visual_analysis(reason);
 }
 
 bool MainAppTestAccess::stop_analysis_requested(const MainApp& app)
