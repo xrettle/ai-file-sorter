@@ -1458,7 +1458,10 @@ TEST_CASE("CategorizationService uses separate main-category and subcategory pro
     CHECK((*prompts)[0].find("Document summary: Quick reference to PCI DSS controls for merchants and service providers.") != std::string::npos);
     CHECK((*prompts)[1].find("Return only the subcategory text on a single line.") != std::string::npos);
     CHECK((*prompts)[1].find("The main category is already fixed to: Documents") != std::string::npos);
+    CHECK((*prompts)[1].find("Good: PCI DSS") != std::string::npos);
+    CHECK((*prompts)[1].find("Bad: Documents - Financial Documents") != std::string::npos);
     CHECK((*prompts)[1].find("Document categorization guidance:") != std::string::npos);
+    CHECK((*prompts)[1].find("Allowed main categories") == std::string::npos);
 }
 
 TEST_CASE("CategorizationService keeps the selected main category when the subcategory pass echoes another one") {
@@ -1501,7 +1504,10 @@ TEST_CASE("CategorizationService keeps the selected main category when the subca
     CHECK(*calls == 2);
     REQUIRE(prompts->size() == 2);
     CHECK((*prompts)[1].find("The main category is already fixed to: Software") != std::string::npos);
+    CHECK((*prompts)[1].find("Good: Version Control") != std::string::npos);
+    CHECK((*prompts)[1].find("Bad: Data Exports Installer Builders") != std::string::npos);
     CHECK((*prompts)[1].find("Software and archive artifact guidance:") != std::string::npos);
+    CHECK((*prompts)[1].find("Allowed main categories") == std::string::npos);
 }
 
 TEST_CASE("CategorizationService falls back when the subcategory pass returns malformed JSON-like text") {

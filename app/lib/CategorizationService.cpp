@@ -397,6 +397,75 @@ std::vector<std::string> tokenize_prompt_text(const std::string& text)
     return tokens;
 }
 
+std::string strip_main_category_sections_for_subcategory_prompt(const std::string& context)
+{
+    if (context.empty()) {
+        return context;
+    }
+
+    enum class SkipSection {
+        None,
+        MainCategories,
+        CategoryCandidates
+    };
+
+    const auto starts_section = [](const std::string& line) {
+        return starts_with_case_insensitive(line,
+                                            "Allowed main categories") ||
+               starts_with_case_insensitive(line,
+                                            "Allowed category candidates");
+    };
+    const auto resumes_output = [](const std::string& line) {
+        return starts_with_case_insensitive(line,
+                                            "Allowed subcategories") ||
+               starts_with_case_insensitive(line,
+                                            "Allowed subcategory candidates");
+    };
+
+    std::ostringstream cleaned;
+    std::istringstream iss(context);
+    SkipSection skip = SkipSection::None;
+    bool wrote_line = false;
+    bool pending_blank_line = false;
+    for (std::string line; std::getline(iss, line); ) {
+        const std::string trimmed = trim_copy(line);
+        if (skip == SkipSection::None && starts_section(trimmed)) {
+            skip = starts_with_case_insensitive(trimmed, "Allowed main categories")
+                ? SkipSection::MainCategories
+                : SkipSection::CategoryCandidates;
+            continue;
+        }
+
+        if (skip != SkipSection::None) {
+            if (resumes_output(trimmed)) {
+                skip = SkipSection::None;
+            } else if (trimmed.empty()) {
+                skip = SkipSection::None;
+                pending_blank_line = wrote_line;
+                continue;
+            } else {
+                continue;
+            }
+        }
+
+        if (trimmed.empty()) {
+            pending_blank_line = wrote_line;
+            continue;
+        }
+
+        if (pending_blank_line && wrote_line) {
+            cleaned << "\n\n";
+        } else if (wrote_line) {
+            cleaned << "\n";
+        }
+        cleaned << line;
+        wrote_line = true;
+        pending_blank_line = false;
+    }
+
+    return cleaned.str();
+}
+
 int score_label_against_query(const std::string& label, const std::vector<std::string>& query_tokens)
 {
     if (label.empty() || query_tokens.empty()) {
@@ -858,6 +927,84 @@ std::pair<std::string, std::string> normalize_artifact_category_labels(
 // Returns the first allowed entry or an empty string when the list is empty.
 std::string first_allowed_or_blank(const std::vector<std::string>& allowed) {
     return allowed.empty() ? std::string() : allowed.front();
+}
+
+std::string build_subcategory_example_block(const std::string& prompt_name,
+                                            const std::string& prompt_path,
+                                            FileType file_type,
+                                            const std::string& selected_main_category)
+{
+    std::ostringstream examples;
+    const std::string normalized_main = to_lower_copy_str(trim_copy(selected_main_category));
+    const bool image_context = normalized_main == "images" || is_image_prompt_context(prompt_name, file_type);
+    const bool document_context =
+        is_document_prompt_context(prompt_name, file_type) ||
+        normalized_main == "documents" ||
+        normalized_main == "presentations" ||
+        normalized_main == "spreadsheets" ||
+        normalized_main == "data exports" ||
+        normalized_main == "configs";
+    const bool artifact_context =
+        ArtifactCategoryPolicy::is_supported_artifact_file_name(prompt_name) ||
+        normalized_main == "software" ||
+        normalized_main == "drivers" ||
+        normalized_main == "installers" ||
+        normalized_main == "operating systems" ||
+        normalized_main == "archives";
+
+    examples << "Examples:\n";
+    if (image_context) {
+        if (is_screenshot_like_image_context(prompt_name, prompt_path)) {
+            examples
+                << "- Good: Dashboard Interfaces\n"
+                << "- Good: Product Pages\n"
+                << "- Good: File Managers\n"
+                << "- Bad: Images Screenshot of software interface\n";
+        } else {
+            examples
+                << "- Good: Pets\n"
+                << "- Good: Small Mammals\n"
+                << "- Good: Wildlife\n"
+                << "- Bad: Images Pets\n"
+                << "- Bad: Images Animals Small Mammals\n";
+        }
+        examples
+            << "- Avoid caption-like phrases such as Newborn Animals when a simpler subject label fits better.\n";
+        return examples.str();
+    }
+
+    if (document_context) {
+        examples
+            << "- Good: PCI DSS\n"
+            << "- Good: Financial Documents\n"
+            << "- Good: Camera Guides\n"
+            << "- Bad: Documents - Financial Documents\n";
+        return examples.str();
+    }
+
+    if (artifact_context) {
+        if (normalized_main == "drivers") {
+            examples
+                << "- Good: Graphics Drivers\n"
+                << "- Bad: Software Drivers Graphics Drivers\n";
+        } else if (normalized_main == "installers") {
+            examples
+                << "- Good: Installer Builders\n"
+                << "- Bad: Software Installer Builders\n";
+        } else {
+            examples
+                << "- Good: Version Control\n"
+                << "- Good: Database Tools\n"
+                << "- Good: Installer Builders\n"
+                << "- Bad: Data Exports Installer Builders\n";
+        }
+        return examples.str();
+    }
+
+    examples
+        << "- Good: concise leaf labels such as Financial Reports, Version Control, or Wildlife.\n"
+        << "- Bad: labels that repeat the main category or stack multiple category levels.\n";
+    return examples.str();
 }
 
 std::vector<std::string> split_segments(const std::string& line, std::string_view delimiter) {
@@ -1466,6 +1613,8 @@ std::string CategorizationService::build_subcategory_selection_prompt(
     const std::string& consistency_context) const
 {
     std::ostringstream prompt;
+    const std::string subcategory_context =
+        strip_main_category_sections_for_subcategory_prompt(consistency_context);
     prompt << (file_type == FileType::File
                    ? "Choose a specific subcategory for this file.\n"
                    : "Choose a specific subcategory for this directory.\n");
@@ -1473,11 +1622,20 @@ std::string CategorizationService::build_subcategory_selection_prompt(
     prompt << "Rules:\n";
     prompt << "- The main category is already fixed to: " << selected_main_category << "\n";
     prompt << "- Do not change or repeat the main category.\n";
-    prompt << "- If the context mentions Allowed main categories, ignore that list because the main category is already fixed.\n";
     prompt << "- If the context mentions Allowed subcategories, choose one of them.\n";
     prompt << "- Do not use JSON, quotes, bullets, or labels.\n";
     prompt << "- Do not explain.\n";
-    prompt << "- Keep the subcategory specific and concise.\n\n";
+    prompt << "- Keep the subcategory specific and concise.\n";
+    prompt << "- Think like naming a folder: prefer the shortest useful leaf label.\n";
+    prompt << "- Do not prepend the main category or another family label.\n";
+    prompt << "- Do not combine multiple category levels in one answer.\n";
+    prompt << "- Prefer one to three words when possible.\n\n";
+
+    prompt << build_subcategory_example_block(prompt_name,
+                                              prompt_path,
+                                              file_type,
+                                              selected_main_category)
+           << "\n";
 
     const std::string base_path = extract_base_prompt_path(prompt_path);
     prompt << (file_type == FileType::File ? "File name: " : "Directory name: ")
@@ -1496,8 +1654,8 @@ std::string CategorizationService::build_subcategory_selection_prompt(
             prompt << "Document summary: " << summary << "\n";
         }
     }
-    if (!consistency_context.empty()) {
-        prompt << "\n" << consistency_context;
+    if (!subcategory_context.empty()) {
+        prompt << "\n" << subcategory_context;
     }
 
     return prompt.str();
@@ -2262,6 +2420,7 @@ std::string CategorizationService::build_combined_context(const std::string& hin
 
         image_guidance
             << "- Categorize the subject matter shown in the image, not merely the file format.\n"
+            << "- Keep the subcategory concise and leaf-like: prefer labels such as Pets, Small Mammals, Wildlife, Landscapes, or Dashboard Interfaces, and do not prefix them with Images.\n"
             << "- Treat screenshots, webpage captures, dashboards, forms, mockups, and app interfaces as images depicting content.\n"
             << "- Do not classify a PNG/JPG/WebP screenshot as Software, Operating Systems, Installers, Databases, or similar artifact categories unless the file itself is actually such an artifact.\n"
             << "- Use the filename, extension, and directory context as supporting clues.\n";
@@ -2297,6 +2456,7 @@ std::string CategorizationService::build_combined_context(const std::string& hin
                 << "- Prefer one of these main categories when it clearly fits: Documents, Presentations, Spreadsheets, Data Exports, Configs.\n"
                 << "- Default to Documents for ordinary PDFs, word-processing files, notes, manuals, letters, brochures, certificates, policies, reports, and articles.\n"
                 << "- Use Presentations only for slide decks, Spreadsheets only for workbook-like tabular files, Data Exports only for export-style tabular data files, and Configs only for configuration files.\n"
+                << "- Keep the subcategory concise and leaf-like: prefer labels such as PCI DSS, Financial Documents, Camera Guides, or Vendor Services, and do not prefix them with Documents.\n"
                 << "- Put the specific topic or subject matter in the subcategory instead of inventing a topical main category like Security, Marketing, or Computing.\n";
         }
 
@@ -2309,6 +2469,7 @@ std::string CategorizationService::build_combined_context(const std::string& hin
             << "Software and archive artifact guidance:\n"
             << "- Keep the main category stable and filesystem-oriented.\n"
             << "- Use the main category for the broad family, and put the specific software purpose in the subcategory.\n"
+            << "- Keep the subcategory concise and leaf-like: prefer labels such as Version Control, Database Tools, Graphics Drivers, or Installer Builders, and do not stack multiple family labels.\n"
             << "- Prefer specific subcategories like Version Control, Database Tools, Screen Recording, Process Monitoring, Graphics Drivers, Virtualization, or Installer Builders when they fit.\n"
             << "- Do not answer with a generic subcategory that merely repeats the main category or another top-level family like Software, Installers, Drivers, Operating Systems, Archives, Data Exports, or Other.\n"
             << "- Use the filename, extension, and directory context as supporting clues.\n";
