@@ -274,6 +274,13 @@ Procedure: Invoke the continue-without-visual-analysis prompt path.
 Expected outcome: The prompt returns true and the stop-analysis flag remains false.
 Run: `./build-tests/ai_file_sorter_tests "Continue-without-visual-analysis acceptance keeps analysis running"`
 
+#### Test case: Vision diagnostics are only shown in the progress dialog for development or test mode
+Purpose: Keep verbose visual runtime and timing diagnostics out of the normal progress dialog while preserving them for developer-oriented runs.
+Setup: Build `MainApp` in normal, development, and test modes, then prepare representative `[VISION] Runtime`, `[VISION] Timing`, and ordinary vision progress messages.
+Procedure: Query the progress-dialog visibility helper for each mode and message type.
+Expected outcome: Normal mode hides the runtime and timing diagnostics but still shows ordinary vision progress, while development and test modes show the diagnostics.
+Run: `./build-tests/ai_file_sorter_tests "Vision diagnostics are only shown in the progress dialog for development or test mode"`
+
 ### `tests/unit/test_image_analyzer_factory.cpp`
 
 #### Test case: ImageAnalyzerFactory rejects invalid GGUF artifacts before analyzer startup

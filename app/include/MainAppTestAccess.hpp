@@ -258,6 +258,14 @@ public:
      */
     static bool stop_analysis_requested(const MainApp& app);
     /**
+     * @brief Return whether a progress message would be shown in the progress dialog.
+     * @param app MainApp instance.
+     * @param message Progress text to evaluate.
+     * @return True when the dialog should show the message.
+     */
+    static bool should_show_progress_message_in_dialog(const MainApp& app,
+                                                       const std::string& message);
+    /**
      * @brief Returns whether a visual-analysis failure should offer CPU retry.
      * @param reason Exception text produced by the failed visual analysis step.
      * @return True when the failure looks like GPU memory pressure.

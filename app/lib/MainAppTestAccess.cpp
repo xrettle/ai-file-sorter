@@ -182,6 +182,12 @@ bool MainAppTestAccess::stop_analysis_requested(const MainApp& app)
     return app.stop_analysis.load();
 }
 
+bool MainAppTestAccess::should_show_progress_message_in_dialog(const MainApp& app,
+                                                               const std::string& message)
+{
+    return app.should_show_progress_message_in_dialog(message);
+}
+
 bool MainAppTestAccess::should_offer_visual_cpu_fallback(const std::string& reason) {
     return VisualLlmRuntime::should_offer_cpu_fallback(reason);
 }

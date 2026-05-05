@@ -252,6 +252,12 @@ private:
     void show_llm_selection_dialog();
     void on_about_activate();
     void append_progress(const std::string& message);
+    /**
+     * @brief Returns whether a progress message should be shown in the progress dialog.
+     * @param message Progress text to evaluate.
+     * @return True when the message should be visible in the dialog.
+     */
+    bool should_show_progress_message_in_dialog(const std::string& message) const;
     void configure_progress_stages(const std::vector<CategorizationProgressDialog::StagePlan>& stages);
     void set_progress_stage_items(CategorizationProgressDialog::StageId stage_id,
                                   const std::vector<FileEntry>& items);

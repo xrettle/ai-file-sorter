@@ -1762,10 +1762,22 @@ void MainApp::populate_tree_view(const std::vector<CategorizedFile>& files)
 void MainApp::append_progress(const std::string& message)
 {
     run_on_ui([this, message]() {
-        if (progress_dialog) {
+        if (progress_dialog && should_show_progress_message_in_dialog(message)) {
             progress_dialog->append_text(message);
         }
     });
+}
+
+bool MainApp::should_show_progress_message_in_dialog(const std::string& message) const
+{
+    const bool vision_diagnostic =
+        message.rfind("[VISION] Runtime: ", 0) == 0 ||
+        message.rfind("[VISION] Timing ", 0) == 0;
+    if (!vision_diagnostic) {
+        return true;
+    }
+
+    return is_development_mode() || is_test_mode();
 }
 
 void MainApp::configure_progress_stages(const std::vector<CategorizationProgressDialog::StagePlan>& stages)
@@ -2501,7 +2513,7 @@ void MainApp::show_error_dialog(const std::string& message)
 void MainApp::report_progress(const std::string& message)
 {
     run_on_ui([this, message]() {
-        if (progress_dialog) {
+        if (progress_dialog && should_show_progress_message_in_dialog(message)) {
             progress_dialog->append_text(message);
         }
     });
