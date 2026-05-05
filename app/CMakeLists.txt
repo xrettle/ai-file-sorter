@@ -123,6 +123,17 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     )
 endif()
 
+if(APPLE)
+    set(_aifs_macos_arches "${CMAKE_OSX_ARCHITECTURES}")
+    if(NOT _aifs_macos_arches)
+        set(_aifs_macos_arches "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    if(_aifs_macos_arches MATCHES "(^|;)(arm64|aarch64)($|;)")
+        # Qt 6 headers on newer Apple SDKs require arm_acle.h for __yield().
+        add_compile_options(-include arm_acle.h)
+    endif()
+endif()
+
 # Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
 find_package(Qt6LinguistTools CONFIG QUIET)

@@ -110,6 +110,10 @@ endif
     CXXFLAGS += -isysroot $(SDKROOT) -stdlib=libc++ -I$(SDKROOT)/usr/include/c++/v1
     LDFLAGS += -isysroot $(SDKROOT)
     endif
+    ifeq ($(MACOS_ARCH),arm64)
+    # Qt 6 headers on newer Apple SDKs require arm_acle.h for __yield().
+    CXXFLAGS += -include arm_acle.h
+    endif
     LDFLAGS += -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
     TARGET := $(BIN_DIR)/aifilesorter
     INSTALL_DIR := /usr/local/bin
