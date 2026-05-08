@@ -140,7 +140,6 @@ public:
         }
         path_ = std::filesystem::temp_directory_path() /
                 (make_unique_token("aifs-model-") + ".gguf");
-        std::vector<char> buffer(file_size, 0);
         const std::string key = "llama.block_count";
         const std::uint64_t len = static_cast<std::uint64_t>(key.size());
         const std::uint32_t type = 4; // GGUF_TYPE_UINT32
@@ -148,9 +147,7 @@ public:
 
         const std::size_t required =
             sizeof(len) + key.size() + sizeof(type) + sizeof(value);
-        if (buffer.size() < required) {
-            buffer.resize(required);
-        }
+        std::vector<char> buffer(required, 0);
 
         std::size_t offset = 0;
         std::memcpy(&buffer[offset], &len, sizeof(len));
@@ -163,6 +160,11 @@ public:
 
         std::ofstream out(path_, std::ios::binary);
         out.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+        if (file_size > buffer.size()) {
+            out.seekp(static_cast<std::streamoff>(file_size - 1), std::ios::beg);
+            const char zero = 0;
+            out.write(&zero, 1);
+        }
         out.close();
     }
 

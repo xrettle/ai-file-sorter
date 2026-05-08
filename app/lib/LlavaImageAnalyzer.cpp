@@ -7,6 +7,7 @@
 #include <QString>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cstdint>
@@ -15,6 +16,8 @@
 #include <cstring>
 #include <cerrno>
 #include <climits>
+#include <cmath>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -36,6 +39,7 @@
 
 #ifdef AI_FILE_SORTER_HAS_MTMD
 #include "ggml-backend.h"
+#include "gguf.h"
 #include "llama.h"
 #include "mtmd.h"
 #include "mtmd-helper.h"
@@ -62,6 +66,25 @@ MTMD_API void mtmd_helper_log_set(ggml_log_callback log_callback, void* user_dat
 namespace {
 constexpr size_t kMaxFilenameWords = 3;
 constexpr size_t kMaxFilenameLength = 50;
+constexpr int32_t kDefaultVisualCpuBatchSize = 512;
+constexpr int32_t kDefaultVisualGpuBatchSize = 512;
+constexpr int32_t kDefaultMetalVisualBatchSize = 1024;
+constexpr int32_t kVisualBatchRetrySize = 256;
+constexpr int32_t kVisualBatchEmergencySize = 128;
+constexpr int32_t kVisualReducedContextTokens = 2048;
+constexpr int32_t kVisualMinimumContextTokens = 1024;
+constexpr std::size_t kEstimatedPromptBufferBytes = 4096;
+constexpr std::size_t kGeneratedResponseReserveBytes = 256;
+constexpr std::size_t kTokenPieceBufferBytes = 256;
+constexpr double kBytesPerMiB = 1024.0 * 1024.0;
+constexpr double kVisualSafetyReserveFraction = 0.05;
+constexpr double kVisualMinimumSafetyReserveBytes = 192.0 * kBytesPerMiB;
+constexpr double kVisualBudgetFallbackFraction = 0.75;
+constexpr double kVisualMaxApproxFreeBudgetFraction = 0.98;
+constexpr double kVisualMaxUsableTotalBudgetFraction = 0.90;
+constexpr double kVisualMinApproxFreeBudgetFraction = 0.45;
+constexpr double kVisualLayerOverheadFactor = 1.08;
+constexpr int32_t kVisualTierHeuristicReconciliationWindowLayers = 4;
 
 #if defined(AI_FILE_SORTER_HAS_MTMD) && defined(_WIN32)
 FARPROC resolve_mtmd_helper(const char* name) {
@@ -360,25 +383,60 @@ bool case_insensitive_contains(std::string_view text, std::string_view needle) {
 
 int32_t resolve_default_visual_batch_size(bool gpu_enabled, std::string_view backend_name) {
     if (!gpu_enabled) {
-        return 512;
+        return kDefaultVisualCpuBatchSize;
     }
     if (case_insensitive_contains(backend_name, "metal")) {
-        return 1024;
+        return kDefaultMetalVisualBatchSize;
     }
 #if defined(_WIN32)
     // Windows GPU drivers are more sensitive to an initial oversized context
-    // allocation, so keep image analysis at the proven 512-token batch.
-    return 512;
+    // allocation, so keep image analysis at the proven GPU-safe batch size.
+    return kDefaultVisualGpuBatchSize;
 #else
     if (case_insensitive_contains(backend_name, "vulkan")) {
-        return 512;
+        return kDefaultVisualGpuBatchSize;
     }
-    return 768;
+    return kDefaultVisualGpuBatchSize;
 #endif
 }
 
+constexpr size_t kVisualEvalHeadroomBytes = 640ULL * 1024ULL * 1024ULL;
+constexpr std::size_t kVisualMetadataScanBytes = 8ULL * 1024ULL * 1024ULL;
+
+struct BackendMemoryInfo {
+    size_t free_bytes = 0;
+    size_t total_bytes = 0;
+    std::string name;
+};
+
+std::vector<int32_t> visual_eval_retry_batches(int32_t current_batch) {
+    std::vector<int32_t> batches;
+    if (current_batch > kDefaultVisualGpuBatchSize) {
+        batches.push_back(kDefaultVisualGpuBatchSize);
+    }
+    if (current_batch > kVisualBatchRetrySize) {
+        batches.push_back(kVisualBatchRetrySize);
+    }
+    if (current_batch > kVisualBatchEmergencySize) {
+        batches.push_back(kVisualBatchEmergencySize);
+    }
+    return batches;
+}
+
+int32_t estimate_visual_n_gpu_layers_with_headroom(const std::string& model_path,
+                                                   const std::string& mmproj_path,
+                                                   std::string_view backend_name,
+                                                   size_t free_bytes,
+                                                   size_t total_bytes);
+llama_model_params cap_visual_model_gpu_layers_for_headroom(
+    llama_model_params params,
+    const std::string& model_path,
+    const std::string& mmproj_path,
+    const std::shared_ptr<spdlog::logger>& logger);
+
 llama_model_params build_visual_model_params_for_path(
     const std::string& model_path,
+    const std::string& mmproj_path,
     const std::shared_ptr<spdlog::logger>& logger) {
     const auto visual_override = resolve_visual_gpu_layer_override();
     const auto global_override = read_env_value("AI_FILE_SORTER_N_GPU_LAYERS");
@@ -407,7 +465,12 @@ llama_model_params build_visual_model_params_for_path(
         }
     }
 
-    return build_model_params_for_path(model_path, logger);
+    llama_model_params params = build_model_params_for_path(model_path, logger);
+    if (!visual_override.has_value()) {
+        params =
+            cap_visual_model_gpu_layers_for_headroom(params, model_path, mmproj_path, logger);
+    }
+    return params;
 }
 
 bool is_mmproj_memory_guarded_backend(std::string_view backend_name) {
@@ -438,12 +501,6 @@ bool has_mmproj_gpu_headroom(size_t free_bytes, std::uintmax_t file_size) {
 }
 
 #ifdef AI_FILE_SORTER_HAS_MTMD
-struct BackendMemoryInfo {
-    size_t free_bytes = 0;
-    size_t total_bytes = 0;
-    std::string name;
-};
-
 std::optional<BackendMemoryInfo> query_cuda_backend_memory() {
     const auto memory = Utils::query_cuda_memory();
     if (!memory.has_value() || !memory->valid()) {
@@ -502,6 +559,471 @@ std::optional<BackendMemoryInfo> query_backend_memory(std::string_view backend_n
     return std::nullopt;
 }
 
+size_t saturating_add_bytes(size_t lhs, size_t rhs) {
+    if (lhs > std::numeric_limits<size_t>::max() - rhs) {
+        return std::numeric_limits<size_t>::max();
+    }
+    return lhs + rhs;
+}
+
+uint32_t read_visual_le32(const char* ptr) {
+    uint32_t value = 0;
+    std::memcpy(&value, ptr, sizeof(uint32_t));
+    return value;
+}
+
+uint64_t read_visual_le64(const char* ptr) {
+    uint64_t value = 0;
+    std::memcpy(&value, ptr, sizeof(uint64_t));
+    return value;
+}
+
+std::optional<int32_t> read_visual_uint_value(uint32_t type,
+                                              const char* ptr,
+                                              std::size_t available_bytes) {
+    switch (type) {
+        case 4: // GGUF_TYPE_UINT32
+        case 5: // GGUF_TYPE_INT32
+            if (available_bytes >= sizeof(uint32_t)) {
+                return static_cast<int32_t>(read_visual_le32(ptr));
+            }
+            break;
+        case 10: // GGUF_TYPE_UINT64
+        case 11: // GGUF_TYPE_INT64
+            if (available_bytes >= sizeof(uint64_t)) {
+                return static_cast<int32_t>(read_visual_le64(ptr));
+            }
+            break;
+        default:
+            break;
+    }
+    return std::nullopt;
+}
+
+bool read_visual_file_prefix(std::ifstream& file,
+                             std::vector<char>& buffer,
+                             std::size_t requested_bytes,
+                             std::size_t& bytes_read) {
+    if (!file || requested_bytes == 0 || requested_bytes > buffer.size()) {
+        return false;
+    }
+
+    file.read(buffer.data(), static_cast<std::streamsize>(requested_bytes));
+    const std::streamsize count = file.gcount();
+    if (count <= 0) {
+        return false;
+    }
+
+    bytes_read = static_cast<std::size_t>(count);
+    return true;
+}
+
+std::optional<int32_t> parse_visual_block_count_entry(const std::vector<char>& buffer,
+                                                      std::size_t bytes_read,
+                                                      std::size_t key_pos,
+                                                      std::string_view key) {
+    if (key_pos < sizeof(uint64_t)) {
+        return std::nullopt;
+    }
+
+    const uint64_t declared_len =
+        read_visual_le64(buffer.data() + key_pos - sizeof(uint64_t));
+    if (declared_len != key.size()) {
+        return std::nullopt;
+    }
+
+    const std::size_t type_offset = key_pos + key.size();
+    if (type_offset + sizeof(uint32_t) > bytes_read) {
+        return std::nullopt;
+    }
+
+    const uint32_t type = read_visual_le32(buffer.data() + type_offset);
+    const std::size_t value_offset = type_offset + sizeof(uint32_t);
+    if (value_offset >= bytes_read) {
+        return std::nullopt;
+    }
+
+    return read_visual_uint_value(type,
+                                  buffer.data() + value_offset,
+                                  bytes_read - value_offset);
+}
+
+const std::array<const char*, 7>& visual_block_count_keys() {
+    static const std::array<const char*, 7> keys = {
+        "llama.block_count",
+        "llama.layer_count",
+        "llama.n_layer",
+        "gemma.block_count",
+        "qwen.block_count",
+        "qwen2.block_count",
+        "block_count",
+    };
+    return keys;
+}
+
+#ifdef AI_FILE_SORTER_HAS_MTMD
+struct GgufCtxDeleter {
+    void operator()(gguf_context* ctx) const {
+        if (ctx) {
+            gguf_free(ctx);
+        }
+    }
+};
+
+std::optional<int32_t> read_visual_gguf_numeric(gguf_context* ctx, int64_t id) {
+    switch (gguf_get_kv_type(ctx, id)) {
+        case GGUF_TYPE_INT16: return static_cast<int32_t>(gguf_get_val_i16(ctx, id));
+        case GGUF_TYPE_INT32: return gguf_get_val_i32(ctx, id);
+        case GGUF_TYPE_INT64: return static_cast<int32_t>(gguf_get_val_i64(ctx, id));
+        case GGUF_TYPE_UINT16: return static_cast<int32_t>(gguf_get_val_u16(ctx, id));
+        case GGUF_TYPE_UINT32: return static_cast<int32_t>(gguf_get_val_u32(ctx, id));
+        case GGUF_TYPE_UINT64: return static_cast<int32_t>(gguf_get_val_u64(ctx, id));
+        default:
+            return std::nullopt;
+    }
+}
+
+std::optional<int32_t> try_visual_block_count_keys(gguf_context* ctx) {
+    for (const char* key : visual_block_count_keys()) {
+        const int64_t id = gguf_find_key(ctx, key);
+        if (id < 0) {
+            continue;
+        }
+        if (auto value = read_visual_gguf_numeric(ctx, id)) {
+            return value;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<int32_t> infer_visual_block_count_from_tensors(gguf_context* ctx) {
+    const int64_t tensor_count = gguf_get_n_tensors(ctx);
+    int32_t max_layer = -1;
+
+    for (int64_t i = 0; i < tensor_count; ++i) {
+        const char* tensor_name = gguf_get_tensor_name(ctx, i);
+        if (!tensor_name) {
+            continue;
+        }
+
+        int32_t current = -1;
+        for (const char* p = tensor_name; *p; ++p) {
+            if (!std::isdigit(static_cast<unsigned char>(*p))) {
+                continue;
+            }
+
+            int value = 0;
+            while (*p && std::isdigit(static_cast<unsigned char>(*p))) {
+                value = value * 10 + (*p - '0');
+                ++p;
+            }
+            current = std::max(current, value);
+        }
+
+        if (current > max_layer) {
+            max_layer = current;
+        }
+    }
+
+    if (max_layer >= 0) {
+        return max_layer + 1;
+    }
+    return std::nullopt;
+}
+
+bool has_gguf_magic(const std::string& model_path) {
+    std::ifstream file(model_path, std::ios::binary);
+    if (!file) {
+        return false;
+    }
+
+    char magic[4] = {};
+    file.read(magic, sizeof(magic));
+    return file.gcount() == static_cast<std::streamsize>(sizeof(magic)) &&
+           std::memcmp(magic, "GGUF", sizeof(magic)) == 0;
+}
+
+std::optional<int32_t> extract_visual_block_count_gguf(const std::string& model_path) {
+    if (!has_gguf_magic(model_path)) {
+        return std::nullopt;
+    }
+
+    gguf_init_params params{};
+    params.no_alloc = true;
+    gguf_context* ctx = gguf_init_from_file(model_path.c_str(), params);
+    if (!ctx) {
+        return std::nullopt;
+    }
+
+    auto cleanup = std::unique_ptr<gguf_context, GgufCtxDeleter>(ctx);
+    if (auto block_count = try_visual_block_count_keys(ctx)) {
+        return block_count;
+    }
+    return infer_visual_block_count_from_tensors(ctx);
+}
+#endif
+
+std::optional<int32_t> extract_visual_block_count_from_scan(const std::string& model_path) {
+    std::ifstream file(model_path, std::ios::binary);
+    if (!file) {
+        return std::nullopt;
+    }
+
+    std::vector<char> buffer(kVisualMetadataScanBytes);
+    std::streamsize to_read = static_cast<std::streamsize>(buffer.size());
+    std::error_code size_ec;
+    const auto file_size = std::filesystem::file_size(model_path, size_ec);
+    if (!size_ec) {
+        to_read = static_cast<std::streamsize>(std::min<std::uintmax_t>(file_size, buffer.size()));
+    }
+
+    if (to_read <= 0 || static_cast<std::size_t>(to_read) > buffer.size()) {
+        return std::nullopt;
+    }
+
+    std::size_t bytes_read = 0;
+    if (!read_visual_file_prefix(file, buffer, static_cast<std::size_t>(to_read), bytes_read)) {
+        return std::nullopt;
+    }
+
+    const std::string_view data(buffer.data(), bytes_read);
+    for (const char* key : visual_block_count_keys()) {
+        std::size_t pos = data.find(key);
+        while (pos != std::string_view::npos) {
+            if (const auto parsed =
+                    parse_visual_block_count_entry(buffer, bytes_read, pos, key)) {
+                return parsed;
+            }
+            pos = data.find(key, pos + 1);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<int32_t> extract_visual_block_count(const std::string& model_path) {
+#ifdef AI_FILE_SORTER_HAS_MTMD
+    if (const auto block_count = extract_visual_block_count_gguf(model_path)) {
+        return block_count;
+    }
+#endif
+    return extract_visual_block_count_from_scan(model_path);
+}
+
+struct VisualLayerMetrics {
+    int32_t total_layers = 0;
+    double bytes_per_layer = 0.0;
+};
+
+bool populate_visual_layer_metrics(const std::string& model_path, VisualLayerMetrics& metrics) {
+    std::error_code ec;
+    const auto file_size = std::filesystem::file_size(model_path, ec);
+    if (ec) {
+        return false;
+    }
+
+    const auto block_count = extract_visual_block_count(model_path);
+    if (!block_count.has_value() || block_count.value() <= 0) {
+        return false;
+    }
+
+    metrics.total_layers = *block_count;
+    metrics.bytes_per_layer =
+        static_cast<double>(file_size) / static_cast<double>(metrics.total_layers);
+    return metrics.bytes_per_layer > 0.0;
+}
+
+Utils::CudaMemoryInfo subtract_visual_headroom(size_t free_bytes,
+                                               size_t total_bytes,
+                                               size_t reserve_bytes) {
+    Utils::CudaMemoryInfo adjusted;
+    if (free_bytes <= reserve_bytes) {
+        return adjusted;
+    }
+
+    adjusted.free_bytes = free_bytes - reserve_bytes;
+    const size_t usable_total = (total_bytes != 0) ? total_bytes : free_bytes;
+    adjusted.total_bytes =
+        (usable_total > reserve_bytes) ? usable_total - reserve_bytes : adjusted.free_bytes;
+    return adjusted;
+}
+
+int32_t estimate_visual_n_gpu_layers_from_adjusted_memory(const VisualLayerMetrics& metrics,
+                                                          const Utils::CudaMemoryInfo& memory) {
+    if (metrics.total_layers <= 0 || metrics.bytes_per_layer <= 0.0 || !memory.valid()) {
+        return 0;
+    }
+
+    double approx_free = static_cast<double>(memory.free_bytes);
+    double total = static_cast<double>(memory.total_bytes);
+    if (total <= 0.0) {
+        total = approx_free;
+    }
+
+    const double usable_total = std::max(total, approx_free);
+    if (usable_total <= 0.0 || approx_free <= 0.0) {
+        return 0;
+    }
+
+    const double safety_reserve =
+        std::max(usable_total * kVisualSafetyReserveFraction,
+                 kVisualMinimumSafetyReserveBytes);
+    double budget = approx_free - safety_reserve;
+    if (budget <= 0.0) {
+        budget = approx_free * kVisualBudgetFallbackFraction;
+    }
+
+    const double max_budget =
+        std::min(approx_free * kVisualMaxApproxFreeBudgetFraction,
+                 usable_total * kVisualMaxUsableTotalBudgetFraction);
+    if (max_budget <= 0.0) {
+        return 0;
+    }
+
+    const double min_budget =
+        std::min(approx_free * kVisualMinApproxFreeBudgetFraction, max_budget);
+    budget = std::clamp(budget, min_budget, max_budget);
+
+    const double denominator = metrics.bytes_per_layer * kVisualLayerOverheadFactor;
+    if (denominator <= 0.0) {
+        return 0;
+    }
+
+    const int32_t estimated_layers =
+        static_cast<int32_t>(std::floor(budget / denominator));
+    if (estimated_layers <= 0) {
+        return 0;
+    }
+
+    return std::clamp<int32_t>(estimated_layers, 1, metrics.total_layers);
+}
+
+std::optional<std::string> resolve_visual_headroom_backend_name() {
+    if (const auto backend = read_env_value("AI_FILE_SORTER_GPU_BACKEND")) {
+        const std::string lowered = to_lower_copy(*backend);
+        if (lowered == "cpu") {
+            return std::nullopt;
+        }
+        if (lowered == "cuda" || lowered == "vulkan") {
+            return lowered;
+        }
+    }
+
+    if (const auto device = read_env_value("LLAMA_ARG_DEVICE")) {
+        const std::string lowered = to_lower_copy(*device);
+        if (lowered == "cpu") {
+            return std::nullopt;
+        }
+        if (lowered == "cuda" || lowered == "vulkan") {
+            return lowered;
+        }
+    }
+
+    if (read_env_bool("GGML_DISABLE_CUDA").value_or(false)) {
+        if (query_backend_memory("vulkan").has_value()) {
+            return std::string("vulkan");
+        }
+        return std::nullopt;
+    }
+
+    if (Utils::is_cuda_available()) {
+        return std::string("cuda");
+    }
+    if (query_backend_memory("vulkan").has_value()) {
+        return std::string("vulkan");
+    }
+    return std::nullopt;
+}
+
+int32_t estimate_visual_n_gpu_layers_with_headroom(const std::string& model_path,
+                                                   const std::string& mmproj_path,
+                                                   std::string_view backend_name,
+                                                   size_t free_bytes,
+                                                   size_t total_bytes) {
+    if (!is_mmproj_memory_guarded_backend(backend_name)) {
+        return -1;
+    }
+
+    std::error_code mmproj_ec;
+    const auto mmproj_size = std::filesystem::file_size(mmproj_path, mmproj_ec);
+    if (mmproj_ec) {
+        return -1;
+    }
+
+    const size_t reserve_bytes =
+        saturating_add_bytes(required_mmproj_gpu_bytes(mmproj_size), kVisualEvalHeadroomBytes);
+    const Utils::CudaMemoryInfo adjusted_memory =
+        subtract_visual_headroom(free_bytes, total_bytes, reserve_bytes);
+    const size_t raw_total_bytes = (total_bytes != 0) ? total_bytes : free_bytes;
+    Utils::CudaMemoryInfo total_vram_memory;
+    total_vram_memory.free_bytes = raw_total_bytes;
+    total_vram_memory.total_bytes = raw_total_bytes;
+    const int32_t total_vram_heuristic_layers =
+        Utils::compute_ngl_from_cuda_memory(total_vram_memory);
+
+    VisualLayerMetrics metrics;
+    const int heuristic_layers = Utils::compute_ngl_from_cuda_memory(adjusted_memory);
+    if (!populate_visual_layer_metrics(model_path, metrics)) {
+        return std::max(heuristic_layers, total_vram_heuristic_layers);
+    }
+
+    int32_t candidate =
+        estimate_visual_n_gpu_layers_from_adjusted_memory(metrics, adjusted_memory);
+    if (candidate <= 0) {
+        return heuristic_layers;
+    }
+    if (heuristic_layers > 0) {
+        candidate = std::max(candidate, heuristic_layers);
+    }
+    if (total_vram_heuristic_layers > candidate &&
+        total_vram_heuristic_layers - candidate <=
+            kVisualTierHeuristicReconciliationWindowLayers) {
+        candidate = total_vram_heuristic_layers;
+    }
+    return candidate;
+}
+
+llama_model_params cap_visual_model_gpu_layers_for_headroom(
+    llama_model_params params,
+    const std::string& model_path,
+    const std::string& mmproj_path,
+    const std::shared_ptr<spdlog::logger>& logger) {
+    if (params.n_gpu_layers <= 0) {
+        return params;
+    }
+
+    const auto backend_name = resolve_visual_headroom_backend_name();
+    if (!backend_name.has_value()) {
+        return params;
+    }
+
+    const auto memory = query_backend_memory(*backend_name);
+    if (!memory.has_value()) {
+        return params;
+    }
+
+    const int32_t capped_layers = estimate_visual_n_gpu_layers_with_headroom(
+        model_path,
+        mmproj_path,
+        *backend_name,
+        memory->free_bytes,
+        memory->total_bytes);
+    if (capped_layers < 0 || capped_layers >= params.n_gpu_layers) {
+        return params;
+    }
+
+    if (logger) {
+        logger->info(
+            "Capping visual n_gpu_layers from {} to {} on {} to preserve mmproj and multimodal eval headroom.",
+            params.n_gpu_layers,
+            capped_layers,
+            guarded_backend_label(*backend_name));
+    }
+
+    params.n_gpu_layers = capped_layers;
+    return params;
+}
+
 bool should_enable_mmproj_gpu(const std::filesystem::path& mmproj_path,
                               std::string_view backend_name,
                               const std::shared_ptr<spdlog::logger>& logger) {
@@ -535,13 +1057,12 @@ bool should_enable_mmproj_gpu(const std::filesystem::path& mmproj_path,
 
     if (!has_mmproj_gpu_headroom(memory->free_bytes, file_size)) {
         if (logger) {
-            const double to_mib = 1024.0 * 1024.0;
             logger->warn(
                 "{} free memory {:.1f} MiB < {:.1f} MiB needed for mmproj; using CPU for visual encoder. "
                 "Set AI_FILE_SORTER_VISUAL_USE_GPU=1 to force GPU.",
                 backend_label,
-                memory->free_bytes / to_mib,
-                required_bytes / to_mib);
+                memory->free_bytes / kBytesPerMiB,
+                required_bytes / kBytesPerMiB);
         }
         return false;
     }
@@ -614,7 +1135,7 @@ bool format_visual_prompt(llama_model* model,
     owned_messages.emplace_back(user_prompt);
     messages.push_back({"user", owned_messages.back().c_str()});
 
-    std::size_t estimated_size = 4096;
+    std::size_t estimated_size = kEstimatedPromptBufferBytes;
     for (const auto& message : owned_messages) {
         estimated_size += message.size() * 2;
     }
@@ -646,6 +1167,25 @@ bool format_visual_prompt(llama_model* model,
     final_prompt.assign(formatted_prompt.data(), static_cast<std::size_t>(actual_len));
     return true;
 }
+
+#else
+
+int32_t estimate_visual_n_gpu_layers_with_headroom(const std::string&,
+                                                   const std::string&,
+                                                   std::string_view,
+                                                   size_t,
+                                                   size_t) {
+    return -1;
+}
+
+llama_model_params cap_visual_model_gpu_layers_for_headroom(
+    llama_model_params params,
+    const std::string&,
+    const std::string&,
+    const std::shared_ptr<spdlog::logger>&) {
+    return params;
+}
+
 #endif
 
 } // namespace
@@ -657,7 +1197,16 @@ int32_t default_visual_batch_size(bool gpu_enabled, std::string_view backend_nam
 }
 
 int32_t visual_model_n_gpu_layers_for_model(const std::string& model_path) {
-    return build_visual_model_params_for_path(model_path, nullptr).n_gpu_layers;
+    return build_visual_model_params_for_path(model_path, model_path, nullptr).n_gpu_layers;
+}
+
+int32_t visual_model_n_gpu_layers_with_headroom(const std::string& model_path,
+                                                const std::string& mmproj_path,
+                                                std::string_view backend_name,
+                                                size_t free_bytes,
+                                                size_t total_bytes) {
+    return estimate_visual_n_gpu_layers_with_headroom(
+        model_path, mmproj_path, backend_name, free_bytes, total_bytes);
 }
 
 bool should_use_mmproj_gpu_for_memory(std::string_view backend_name,
@@ -742,7 +1291,8 @@ LlavaImageAnalyzer::LlavaImageAnalyzer(const std::filesystem::path& model_path,
     const std::string model_path_utf8 = Utils::path_to_utf8(model_path);
     const std::string mmproj_path_utf8 = Utils::path_to_utf8(mmproj_path);
     if (settings_.use_gpu) {
-        model_params = build_visual_model_params_for_path(model_path_utf8, logger);
+        model_params =
+            build_visual_model_params_for_path(model_path_utf8, mmproj_path_utf8, logger);
     } else {
         model_params.n_gpu_layers = 0;
     }
@@ -804,7 +1354,8 @@ LlavaImageAnalyzer::~LlavaImageAnalyzer() {
 void LlavaImageAnalyzer::initialize_context() {
     auto logger = Logger::get_logger("core_logger");
     const int32_t initial_ctx = context_tokens_ > 0 ? context_tokens_ : settings_.n_ctx;
-    const int32_t initial_batch = batch_size_ > 0 ? batch_size_ : 512;
+    const int32_t initial_batch =
+        batch_size_ > 0 ? batch_size_ : kDefaultVisualCpuBatchSize;
 
     auto try_init_context = [&](int32_t n_ctx, int32_t n_batch) -> bool {
         if (context_) {
@@ -836,12 +1387,12 @@ void LlavaImageAnalyzer::initialize_context() {
     bool context_ready = try_init_context(initial_ctx, initial_batch);
     if (context_ready) {
         apply_context_limits(initial_ctx, initial_batch);
-    } else if (initial_batch > 512) {
+    } else if (initial_batch > kDefaultVisualGpuBatchSize) {
         if (logger) {
             logger->warn("Failed to initialize llama_context (n_ctx={}, n_batch={}); retrying with smaller batch.",
                          initial_ctx, initial_batch);
         }
-        const int32_t smaller_batch = 512;
+        const int32_t smaller_batch = kDefaultVisualGpuBatchSize;
         context_ready = try_init_context(initial_ctx, smaller_batch);
         if (context_ready) {
             apply_context_limits(initial_ctx, smaller_batch);
@@ -850,20 +1401,23 @@ void LlavaImageAnalyzer::initialize_context() {
     if (!context_ready) {
         if (logger) {
             logger->warn("Failed to initialize llama_context (n_ctx={}, n_batch={}); retrying with smaller buffers.",
-                         initial_ctx, std::min(initial_batch, 512));
+                         initial_ctx, std::min(initial_batch, kDefaultVisualGpuBatchSize));
         }
-        const int32_t reduced_ctx = std::min(initial_ctx, 2048);
-        const int32_t reduced_batch = std::min(initial_batch, 512);
+        const int32_t reduced_ctx = std::min(initial_ctx, kVisualReducedContextTokens);
+        const int32_t reduced_batch =
+            std::min(initial_batch, kDefaultVisualGpuBatchSize);
         context_ready = try_init_context(reduced_ctx, reduced_batch);
         if (context_ready) {
             apply_context_limits(reduced_ctx, reduced_batch);
         } else {
-            const int32_t smaller_batch = std::min(reduced_batch, 256);
+            const int32_t smaller_batch =
+                std::min(reduced_batch, kVisualBatchRetrySize);
             context_ready = try_init_context(reduced_ctx, smaller_batch);
             if (context_ready) {
                 apply_context_limits(reduced_ctx, smaller_batch);
             } else {
-                const int32_t smaller_ctx = std::min(reduced_ctx, 1024);
+                const int32_t smaller_ctx =
+                    std::min(reduced_ctx, kVisualMinimumContextTokens);
                 context_ready = try_init_context(smaller_ctx, smaller_batch);
                 if (context_ready) {
                     apply_context_limits(smaller_ctx, smaller_batch);
@@ -938,6 +1492,7 @@ ImageAnalysisResult LlavaImageAnalyzer::analyze(const std::filesystem::path& ima
                                                 filename_request.user_prompt,
                                                 settings_.n_predict,
                                                 &diagnostics.filename_pass);
+    diagnostics.batch_size = batch_size_;
     if (logger) {
         logger->info("Visual raw filename: {}", raw_filename);
     }
@@ -1022,6 +1577,7 @@ std::string LlavaImageAnalyzer::infer_text(mtmd_bitmap* bitmap,
                                            const std::string& user_prompt,
                                            int32_t max_tokens,
                                            ImageInferenceDiagnostics* diagnostics) {
+    auto logger = Logger::get_logger("core_logger");
     if (!context_) {
         initialize_context();
     }
@@ -1114,14 +1670,38 @@ std::string LlavaImageAnalyzer::infer_text(mtmd_bitmap* bitmap,
 
     llama_pos new_n_past = 0;
     const auto eval_started = std::chrono::steady_clock::now();
-    if (mtmd_helper_eval_chunks(vision_ctx_,
-                                context_,
-                                chunks.get(),
-                                0 /* n_past */,
-                                0 /* seq_id */,
-                                (batch_size_ > 0 ? batch_size_ : 512) /* n_batch */,
-                                true /* logits_last */,
-                                &new_n_past) != 0) {
+    auto eval_chunks = [&](int32_t n_batch) {
+        return mtmd_helper_eval_chunks(vision_ctx_,
+                                       context_,
+                                       chunks.get(),
+                                       0 /* n_past */,
+                                       0 /* seq_id */,
+                                       n_batch,
+                                       true /* logits_last */,
+                                       &new_n_past);
+    };
+
+    int32_t eval_batch =
+        (batch_size_ > 0 ? batch_size_ : kDefaultVisualCpuBatchSize);
+    int eval_result = eval_chunks(eval_batch);
+    if (eval_result != 0 && bitmap && text_gpu_enabled_) {
+        for (const int32_t retry_batch : visual_eval_retry_batches(eval_batch)) {
+            if (logger) {
+                logger->warn(
+                    "mtmd_helper_eval_chunks failed with n_batch={}; retrying image eval with n_batch={}.",
+                    eval_batch,
+                    retry_batch);
+            }
+            batch_size_ = retry_batch;
+            initialize_context();
+            eval_batch = batch_size_;
+            eval_result = eval_chunks(eval_batch);
+            if (eval_result == 0) {
+                break;
+            }
+        }
+    }
+    if (eval_result != 0) {
         throw std::runtime_error("mtmd_helper_eval_chunks failed");
     }
     const auto eval_finished = std::chrono::steady_clock::now();
@@ -1136,7 +1716,7 @@ std::string LlavaImageAnalyzer::infer_text(mtmd_bitmap* bitmap,
     }
 
     std::string response;
-    response.reserve(256);
+    response.reserve(kGeneratedResponseReserveBytes);
 
     const int vocab_size = llama_vocab_n_tokens(vocab_);
     const auto generation_started = std::chrono::steady_clock::now();
@@ -1151,7 +1731,7 @@ std::string LlavaImageAnalyzer::infer_text(mtmd_bitmap* bitmap,
             break;
         }
 
-        char buffer[256];
+        char buffer[kTokenPieceBufferBytes];
         const int n = llama_token_to_piece(vocab_, token_id, buffer, sizeof(buffer), 0, true);
         if (n < 0) {
             throw std::runtime_error("Failed to convert token to text piece");

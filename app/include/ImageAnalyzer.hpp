@@ -9,6 +9,10 @@
 #include <functional>
 #include <string>
 
+inline constexpr int32_t kDefaultImageAnalyzerContextTokens = 4096;
+inline constexpr int32_t kDefaultImageAnalyzerPredictTokens = 80;
+inline constexpr float kDefaultImageAnalyzerTemperature = 0.2f;
+
 /**
  * @brief Timing and batch diagnostics for a single visual inference pass.
  */
@@ -74,13 +78,13 @@ struct ImageAnalysisResult {
  */
 struct ImageAnalyzerSettings {
     /** @brief Context length (tokens). */
-    int32_t n_ctx = 4096;
+    int32_t n_ctx = kDefaultImageAnalyzerContextTokens;
     /** @brief Maximum tokens to predict. */
-    int32_t n_predict = 80;
+    int32_t n_predict = kDefaultImageAnalyzerPredictTokens;
     /** @brief Number of CPU threads to use (0 = auto). */
     int32_t n_threads = 0;
     /** @brief Sampling temperature. */
-    float temperature = 0.2f;
+    float temperature = kDefaultImageAnalyzerTemperature;
     /** @brief Whether to use GPU acceleration. */
     bool use_gpu = true;
     /** @brief Enable verbose visual model logging. */

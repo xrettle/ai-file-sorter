@@ -14,6 +14,8 @@ struct BackendProbeGuard {
     ~BackendProbeGuard() {
         TestHooks::reset_backend_memory_probe();
         TestHooks::reset_backend_availability_probe();
+        TestHooks::reset_cuda_memory_probe();
+        TestHooks::reset_cuda_availability_probe();
     }
 };
 
@@ -27,7 +29,7 @@ TEST_CASE("LlavaImageAnalyzer uses conservative default visual batch sizing") {
 #if defined(_WIN32)
     CHECK(LlavaImageAnalyzerTestAccess::default_visual_batch_size(true, "cuda") == 512);
 #else
-    CHECK(LlavaImageAnalyzerTestAccess::default_visual_batch_size(true, "cuda") == 768);
+    CHECK(LlavaImageAnalyzerTestAccess::default_visual_batch_size(true, "cuda") == 512);
 #endif
 }
 
@@ -134,4 +136,34 @@ TEST_CASE("LlavaImageAnalyzer honors visual-specific GPU layer override") {
         LlavaImageAnalyzerTestAccess::visual_model_n_gpu_layers_for_model(model.path().string());
     CHECK(actual == 12);
 }
+
+#ifdef AI_FILE_SORTER_HAS_MTMD
+TEST_CASE("LlavaImageAnalyzer lowers visual ngl when reserving mmproj headroom") {
+    TempModelFile model(34, 2489757856ULL);
+    TempModelFile mmproj(1, 624451168ULL);
+
+    const int32_t actual = LlavaImageAnalyzerTestAccess::visual_model_n_gpu_layers_with_headroom(
+        model.path().string(),
+        mmproj.path().string(),
+        "cuda",
+        3676ULL * 1024ULL * 1024ULL,
+        3768ULL * 1024ULL * 1024ULL);
+
+    CHECK(actual == 20);
+}
+
+TEST_CASE("LlavaImageAnalyzer reconciles visual ngl to the GPU tier when the reserve-aware estimate is only slightly lower") {
+    TempModelFile model(34, 2489757856ULL);
+    TempModelFile mmproj(1, 624451168ULL);
+
+    const int32_t actual = LlavaImageAnalyzerTestAccess::visual_model_n_gpu_layers_with_headroom(
+        model.path().string(),
+        mmproj.path().string(),
+        "cuda",
+        3400ULL * 1024ULL * 1024ULL,
+        3768ULL * 1024ULL * 1024ULL);
+
+    CHECK(actual == 20);
+}
+#endif
 #endif

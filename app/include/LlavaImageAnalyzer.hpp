@@ -146,7 +146,7 @@ private:
     std::filesystem::path mmproj_path_;
     std::optional<bool> visual_gpu_override_;
     int32_t context_tokens_{0};
-    int32_t batch_size_{512};
+    int32_t batch_size_{0};
     bool text_gpu_enabled_{false};
     bool mmproj_gpu_enabled_{false};
     std::atomic<int32_t> image_batch_current_{0};
@@ -181,6 +181,21 @@ private:
 namespace LlavaImageAnalyzerTestAccess {
 int32_t default_visual_batch_size(bool gpu_enabled, std::string_view backend_name);
 int32_t visual_model_n_gpu_layers_for_model(const std::string& model_path);
+/**
+ * @brief Estimates a safer visual n_gpu_layers cap after reserving mmproj and eval headroom.
+ * @param model_path Path to the visual text model.
+ * @param mmproj_path Path to the multimodal projector model.
+ * @param backend_name Active backend label such as `cuda` or `vulkan`.
+ * @param free_bytes Free GPU memory in bytes before loading the visual model.
+ * @param total_bytes Total GPU memory in bytes.
+ * @return Recommended visual n_gpu_layers cap; `0` when GPU headroom is insufficient and `-1`
+ *         when the backend does not require visual headroom capping.
+ */
+int32_t visual_model_n_gpu_layers_with_headroom(const std::string& model_path,
+                                                const std::string& mmproj_path,
+                                                std::string_view backend_name,
+                                                size_t free_bytes,
+                                                size_t total_bytes);
 /**
  * @brief Evaluates whether a visual projector should remain on GPU for the given free memory.
  * @param backend_name Active GPU backend name.
