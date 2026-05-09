@@ -991,6 +991,43 @@ Procedure: Resolve the downloaded path for `Local_3b_legacy` and query local ava
 Expected outcome: The legacy choice resolves to the old Q4 file, reports available, and the Gemma 4B choice still reports unavailable.
 Run: `./build-tests/ai_file_sorter_tests "Legacy local LLaMa resolves the previous Q4 artifact without marking Gemma 4B ready"`
 
+#### Test case: Built-in Gemma 4B resolves the shared visual-model artifact path
+Purpose: Ensure the built-in local Gemma choice can reuse the already-downloaded visual Gemma text-model artifact instead of requiring a second copy.
+Setup: Configure matching Gemma 4B local/visual download URLs and place only the visual backend's preferred model artifact under the backend-specific storage directory.
+Procedure: Resolve the downloaded path for `Local_4b_Gemma` and query built-in availability.
+Expected outcome: The built-in Gemma choice resolves to the visual backend artifact path and reports available.
+Run: `./build-tests/ai_file_sorter_tests "Built-in Gemma 4B resolves the shared visual-model artifact path"`
+
+### `tests/unit/test_category_language_support.cpp`
+
+#### Test case: Gemma 3 category language support exposes the full language list
+Purpose: Ensure the built-in Gemma 3 4B local model keeps the full expanded category-language catalog available.
+Setup: Query the category-language support helper for `Local_4b_Gemma`.
+Procedure: Compare the returned list against the app-wide category-language list and spot-check the alphabetical first/last entries.
+Expected outcome: The Gemma 3 helper returns the full category-language set, starting at `Afrikaans` and ending at `Zulu`.
+Run: `./build-tests/ai_file_sorter_tests "Gemma 3 category language support exposes the full language list"`
+
+#### Test case: Custom local models keep the full category language list
+Purpose: Ensure user-supplied local models are not restricted more aggressively than the built-in Gemma 3 baseline.
+Setup: Query the category-language support helper for `Custom`.
+Procedure: Compare the returned list against the app-wide category-language list.
+Expected outcome: The custom-local helper returns the full category-language set.
+Run: `./build-tests/ai_file_sorter_tests "Custom local models keep the full category language list"`
+
+#### Test case: Mistral 7B category language support stays limited to the supported subset
+Purpose: Keep the built-in Mistral 7B local model limited to the conservative translation-language subset discussed for the app.
+Setup: Query the category-language support helper for `Local_7b`.
+Procedure: Verify supported and unsupported languages individually and confirm the expected list length.
+Expected outcome: English, Dutch, French, German, Italian, Swedish, Norwegian, Danish, and Spanish are supported; the rest of the app's category-language options are not.
+Run: `./build-tests/ai_file_sorter_tests "Mistral 7B category language support stays limited to the supported subset"`
+
+#### Test case: English-only built-in local models expose only English
+Purpose: Ensure the legacy 3B local model and built-in Gemma 1.1 7B local model do not advertise unsupported non-English category-language translation.
+Setup: Query the category-language support helper for `Local_3b_legacy` and `Local_7b_Gemma`.
+Procedure: Inspect the returned lists.
+Expected outcome: Both helpers return a one-entry list containing only English.
+Run: `./build-tests/ai_file_sorter_tests "English-only built-in local models expose only English"`
+
 ### `tests/unit/test_database_manager_rename_only.cpp`
 
 #### Test case: DatabaseManager keeps rename-only entries with empty labels

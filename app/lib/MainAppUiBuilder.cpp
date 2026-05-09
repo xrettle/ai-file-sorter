@@ -1,4 +1,6 @@
 #include "MainAppUiBuilder.hpp"
+
+#include "CategoryLanguageSupport.hpp"
 #include "AppInfo.hpp"
 
 #include "MainApp.hpp"
@@ -595,15 +597,6 @@ UiTranslator::Dependencies MainAppUiBuilder::build_translator_dependencies(MainA
             app.spanish_action,
             app.turkish_action,
             app.korean_action,
-            app.category_language_english,
-            app.category_language_french,
-            app.category_language_german,
-            app.category_language_italian,
-            app.category_language_dutch,
-            app.category_language_polish,
-            app.category_language_portuguese,
-            app.category_language_spanish,
-            app.category_language_turkish,
             app.about_action,
             app.quick_start_action,
             app.faq_action,
@@ -629,15 +622,7 @@ UiTranslator::Dependencies MainAppUiBuilder::build_translator_dependencies(MainA
             app.korean_action},
         .category_language = UiTranslator::CategoryLanguageControls{
             app.category_language_group,
-            app.category_language_dutch,
-            app.category_language_english,
-            app.category_language_french,
-            app.category_language_german,
-            app.category_language_italian,
-            app.category_language_polish,
-            app.category_language_portuguese,
-            app.category_language_spanish,
-            app.category_language_turkish},
+            &app.category_language_actions_},
         .file_explorer_dock = app.file_explorer_dock,
         .settings = app.settings,
         .translator = [](const char* source) {
@@ -815,21 +800,16 @@ void MainAppUiBuilder::build_settings_menu(MainApp& app) {
     app.category_language_group->setExclusive(true);
 
     const auto add_cat_lang = [&](CategoryLanguage lang) {
-        QAction* act = app.category_language_menu->addAction(QString());
+        QAction* act = new QAction(QString(), &app);
         act->setCheckable(true);
         act->setData(static_cast<int>(lang));
         app.category_language_group->addAction(act);
+        app.category_language_actions_[categoryLanguageIndex(lang)] = act;
         return act;
     };
-    app.category_language_dutch = add_cat_lang(CategoryLanguage::Dutch);
-    app.category_language_english = add_cat_lang(CategoryLanguage::English);
-    app.category_language_french = add_cat_lang(CategoryLanguage::French);
-    app.category_language_german = add_cat_lang(CategoryLanguage::German);
-    app.category_language_italian = add_cat_lang(CategoryLanguage::Italian);
-    app.category_language_polish = add_cat_lang(CategoryLanguage::Polish);
-    app.category_language_portuguese = add_cat_lang(CategoryLanguage::Portuguese);
-    app.category_language_spanish = add_cat_lang(CategoryLanguage::Spanish);
-    app.category_language_turkish = add_cat_lang(CategoryLanguage::Turkish);
+    for (const CategoryLanguage lang : all_category_languages()) {
+        add_cat_lang(lang);
+    }
 
     QObject::connect(app.category_language_group, &QActionGroup::triggered, &app, [&app](QAction* action) {
         if (!action) {

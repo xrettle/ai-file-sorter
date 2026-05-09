@@ -23,6 +23,8 @@
 #include <QString>
 #include <QToolButton>
 
+#include <cstddef>
+
 #ifndef _WIN32
 namespace {
 
@@ -103,15 +105,7 @@ struct UiTranslatorTestHarness {
     QAction* spanish_action = new QAction(&window);
     QAction* turkish_action = new QAction(&window);
     QAction* korean_action = new QAction(&window);
-    QAction* category_language_english = new QAction(&window);
-    QAction* category_language_french = new QAction(&window);
-    QAction* category_language_german = new QAction(&window);
-    QAction* category_language_italian = new QAction(&window);
-    QAction* category_language_dutch = new QAction(&window);
-    QAction* category_language_polish = new QAction(&window);
-    QAction* category_language_portuguese = new QAction(&window);
-    QAction* category_language_spanish = new QAction(&window);
-    QAction* category_language_turkish = new QAction(&window);
+    UiTranslator::CategoryLanguageActionArray category_language_actions{};
     QAction* about_action = new QAction(&window);
     QAction* quick_start_action = new QAction(&window);
     QAction* faq_action = new QAction(&window);
@@ -134,6 +128,7 @@ struct UiTranslatorTestHarness {
         settings.set_language(Language::French);
         setup_tree_model();
         setup_language_actions();
+        setup_category_language_actions();
     }
 
     void setup_tree_model()
@@ -195,6 +190,23 @@ struct UiTranslatorTestHarness {
         language_group->addAction(spanish_action);
         language_group->addAction(turkish_action);
         language_group->addAction(korean_action);
+    }
+
+    void setup_category_language_actions()
+    {
+        category_language_group->setExclusive(true);
+        for (std::size_t idx = 0; idx < category_language_actions.size(); ++idx) {
+            auto* action = new QAction(&window);
+            action->setCheckable(true);
+            action->setData(static_cast<int>(idx));
+            category_language_group->addAction(action);
+            category_language_actions[idx] = action;
+        }
+    }
+
+    QAction* category_language_action(CategoryLanguage language) const
+    {
+        return category_language_actions[categoryLanguageIndex(language)];
     }
 
     UiTranslator::Dependencies build_deps()
@@ -273,15 +285,6 @@ struct UiTranslatorTestHarness {
                 spanish_action,
                 turkish_action,
                 korean_action,
-                category_language_english,
-                category_language_french,
-                category_language_german,
-                category_language_italian,
-                category_language_dutch,
-                category_language_polish,
-                category_language_portuguese,
-                category_language_spanish,
-                category_language_turkish,
                 about_action,
                 quick_start_action,
                 faq_action,
@@ -307,15 +310,7 @@ struct UiTranslatorTestHarness {
                 korean_action},
             .category_language = UiTranslator::CategoryLanguageControls{
                 category_language_group,
-                category_language_dutch,
-                category_language_english,
-                category_language_french,
-                category_language_german,
-                category_language_italian,
-                category_language_polish,
-                category_language_portuguese,
-                category_language_spanish,
-                category_language_turkish},
+                &category_language_actions},
             .file_explorer_dock = file_explorer_dock,
             .settings = settings,
             .translator = [](const char* source) {
@@ -375,6 +370,12 @@ void verify_menus_and_actions(const UiTranslatorTestHarness& h)
     REQUIRE(h.manage_whitelists_action->text() == QStringLiteral("Manage category whitelists…"));
     REQUIRE(h.reset_learning_action->text() == QStringLiteral("Reset learned behavior…"));
     REQUIRE(h.clear_cache_action->text() == QStringLiteral("Clear cache…"));
+    REQUIRE(h.category_language_action(CategoryLanguage::Hindi)->text() == QStringLiteral("Hindi"));
+    REQUIRE(h.category_language_action(CategoryLanguage::Japanese)->text() == QStringLiteral("Japanese"));
+    REQUIRE(h.category_language_action(CategoryLanguage::SimplifiedChinese)->text() ==
+            QStringLiteral("Simplified Chinese"));
+    REQUIRE(h.category_language_action(CategoryLanguage::TraditionalChinese)->text() ==
+            QStringLiteral("Traditional Chinese"));
     REQUIRE(h.quick_start_action->text() == QStringLiteral("&Quick Start Guide"));
     REQUIRE(h.faq_action->text() == QStringLiteral("&FAQ"));
     REQUIRE(h.development_prompt_logging_action->text() ==

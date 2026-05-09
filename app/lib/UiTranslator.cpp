@@ -76,16 +76,6 @@ constexpr auto kActionDanish = QT_TRANSLATE_NOOP("UiTranslator", "&Danish");
 constexpr auto kActionSpanish = QT_TRANSLATE_NOOP("UiTranslator", "&Spanish");
 constexpr auto kActionTurkish = QT_TRANSLATE_NOOP("UiTranslator", "&Turkish");
 constexpr auto kActionKorean = QT_TRANSLATE_NOOP("UiTranslator", "&Korean");
-constexpr auto kActionCategoryLanguageDutch = QT_TRANSLATE_NOOP("UiTranslator", "Dutch");
-constexpr auto kActionCategoryLanguageEnglish = QT_TRANSLATE_NOOP("UiTranslator", "English");
-constexpr auto kActionCategoryLanguageFrench = QT_TRANSLATE_NOOP("UiTranslator", "French");
-constexpr auto kActionCategoryLanguageGerman = QT_TRANSLATE_NOOP("UiTranslator", "German");
-constexpr auto kActionCategoryLanguageItalian = QT_TRANSLATE_NOOP("UiTranslator", "Italian");
-constexpr auto kActionCategoryLanguagePolish = QT_TRANSLATE_NOOP("UiTranslator", "Polish");
-constexpr auto kActionCategoryLanguagePortuguese =
-    QT_TRANSLATE_NOOP("UiTranslator", "Portuguese");
-constexpr auto kActionCategoryLanguageSpanish = QT_TRANSLATE_NOOP("UiTranslator", "Spanish");
-constexpr auto kActionCategoryLanguageTurkish = QT_TRANSLATE_NOOP("UiTranslator", "Turkish");
 constexpr auto kActionAboutAiFileSorter =
     QT_TRANSLATE_NOOP("UiTranslator", "&About AI File Sorter");
 constexpr auto kActionQuickStartGuide =
@@ -102,6 +92,47 @@ template <typename Widget>
 Widget* raw_ptr(const QPointer<Widget>& pointer)
 {
     return pointer.data();
+}
+
+QString strip_mnemonic_markers(const QString& value)
+{
+    QString result;
+    result.reserve(value.size());
+    for (int i = 0; i < value.size(); ++i) {
+        const QChar ch = value.at(i);
+        if (ch != QChar('&')) {
+            result.push_back(ch);
+            continue;
+        }
+        if (i + 1 < value.size() && value.at(i + 1) == QChar('&')) {
+            result.push_back(QChar('&'));
+            ++i;
+        }
+    }
+    return result;
+}
+
+QAction* shared_interface_language_action(const UiTranslator::Dependencies& deps,
+                                          CategoryLanguage language)
+{
+    switch (language) {
+    case CategoryLanguage::Danish: return deps.actions.danish_action;
+    case CategoryLanguage::Dutch: return deps.actions.dutch_action;
+    case CategoryLanguage::English: return deps.actions.english_action;
+    case CategoryLanguage::Finnish: return deps.actions.finnish_action;
+    case CategoryLanguage::French: return deps.actions.french_action;
+    case CategoryLanguage::German: return deps.actions.german_action;
+    case CategoryLanguage::Hindi: return deps.actions.hindi_action;
+    case CategoryLanguage::Icelandic: return deps.actions.icelandic_action;
+    case CategoryLanguage::Italian: return deps.actions.italian_action;
+    case CategoryLanguage::Korean: return deps.actions.korean_action;
+    case CategoryLanguage::Norwegian: return deps.actions.norwegian_action;
+    case CategoryLanguage::SimplifiedChinese: return deps.actions.simplified_chinese_action;
+    case CategoryLanguage::Spanish: return deps.actions.spanish_action;
+    case CategoryLanguage::Swedish: return deps.actions.swedish_action;
+    case CategoryLanguage::Turkish: return deps.actions.turkish_action;
+    default: return nullptr;
+    }
 }
 
 } // namespace
@@ -329,15 +360,6 @@ void UiTranslator::translate_menus_and_actions() const
         {deps_.actions.spanish_action, kActionSpanish},
         {deps_.actions.turkish_action, kActionTurkish},
         {deps_.actions.korean_action, kActionKorean},
-        {deps_.actions.category_language_dutch, kActionCategoryLanguageDutch},
-        {deps_.actions.category_language_english, kActionCategoryLanguageEnglish},
-        {deps_.actions.category_language_french, kActionCategoryLanguageFrench},
-        {deps_.actions.category_language_german, kActionCategoryLanguageGerman},
-        {deps_.actions.category_language_italian, kActionCategoryLanguageItalian},
-        {deps_.actions.category_language_polish, kActionCategoryLanguagePolish},
-        {deps_.actions.category_language_portuguese, kActionCategoryLanguagePortuguese},
-        {deps_.actions.category_language_spanish, kActionCategoryLanguageSpanish},
-        {deps_.actions.category_language_turkish, kActionCategoryLanguageTurkish},
         {deps_.actions.about_action, kActionAboutAiFileSorter},
         {deps_.actions.quick_start_action, kActionQuickStartGuide},
         {deps_.actions.faq_action, kActionFaq},
@@ -349,6 +371,23 @@ void UiTranslator::translate_menus_and_actions() const
     for (const ActionEntry& entry : action_entries) {
         if (entry.action && entry.text) {
             entry.action->setText(tr(entry.text));
+        }
+    }
+
+    if (deps_.category_language.actions) {
+        for (std::size_t idx = 0; idx < deps_.category_language.actions->size(); ++idx) {
+            QAction* const action = deps_.category_language.actions->at(idx);
+            if (!action) {
+                continue;
+            }
+            const auto language = static_cast<CategoryLanguage>(idx);
+            if (QAction* const shared_action =
+                    shared_interface_language_action(deps_, language)) {
+                action->setText(strip_mnemonic_markers(shared_action->text()));
+                continue;
+            }
+            const QByteArray label_bytes = categoryLanguageToString(language).toUtf8();
+            action->setText(tr(label_bytes.constData()));
         }
     }
 
@@ -448,36 +487,17 @@ void UiTranslator::update_language_group_checks(Language configured) const
 
 void UiTranslator::update_category_language_checks(CategoryLanguage configured) const
 {
-    if (!deps_.category_language.category_language_group) {
+    if (!deps_.category_language.category_language_group ||
+        !deps_.category_language.actions) {
         return;
     }
     QSignalBlocker blocker_cat(deps_.category_language.category_language_group);
-    if (deps_.category_language.dutch) {
-        deps_.category_language.dutch->setChecked(configured == CategoryLanguage::Dutch);
-    }
-    if (deps_.category_language.english) {
-        deps_.category_language.english->setChecked(configured == CategoryLanguage::English);
-    }
-    if (deps_.category_language.french) {
-        deps_.category_language.french->setChecked(configured == CategoryLanguage::French);
-    }
-    if (deps_.category_language.german) {
-        deps_.category_language.german->setChecked(configured == CategoryLanguage::German);
-    }
-    if (deps_.category_language.italian) {
-        deps_.category_language.italian->setChecked(configured == CategoryLanguage::Italian);
-    }
-    if (deps_.category_language.polish) {
-        deps_.category_language.polish->setChecked(configured == CategoryLanguage::Polish);
-    }
-    if (deps_.category_language.portuguese) {
-        deps_.category_language.portuguese->setChecked(configured == CategoryLanguage::Portuguese);
-    }
-    if (deps_.category_language.spanish) {
-        deps_.category_language.spanish->setChecked(configured == CategoryLanguage::Spanish);
-    }
-    if (deps_.category_language.turkish) {
-        deps_.category_language.turkish->setChecked(configured == CategoryLanguage::Turkish);
+    for (std::size_t idx = 0; idx < deps_.category_language.actions->size(); ++idx) {
+        QAction* const action = deps_.category_language.actions->at(idx);
+        if (!action) {
+            continue;
+        }
+        action->setChecked(idx == categoryLanguageIndex(configured));
     }
 }
 

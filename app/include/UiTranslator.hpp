@@ -4,6 +4,7 @@
 #include <QPointer>
 #include <QString>
 
+#include <array>
 #include <functional>
 
 #include <QCheckBox>
@@ -32,6 +33,8 @@ class Settings;
 class UiTranslator
 {
 public:
+    using CategoryLanguageActionArray = std::array<QAction*, kCategoryLanguageCount>;
+
     /**
      * @brief References to the primary controls whose labels are translated together.
      */
@@ -116,15 +119,6 @@ public:
         QAction*& spanish_action;
         QAction*& turkish_action;
         QAction*& korean_action;
-        QAction*& category_language_english;
-        QAction*& category_language_french;
-        QAction*& category_language_german;
-        QAction*& category_language_italian;
-        QAction*& category_language_dutch;
-        QAction*& category_language_polish;
-        QAction*& category_language_portuguese;
-        QAction*& category_language_spanish;
-        QAction*& category_language_turkish;
         QAction*& about_action;
         QAction*& quick_start_action;
         QAction*& faq_action;
@@ -160,15 +154,7 @@ public:
      */
     struct CategoryLanguageControls {
         QActionGroup*& category_language_group;
-        QAction*& dutch;
-        QAction*& english;
-        QAction*& french;
-        QAction*& german;
-        QAction*& italian;
-        QAction*& polish;
-        QAction*& portuguese;
-        QAction*& spanish;
-        QAction*& turkish;
+        const CategoryLanguageActionArray* actions{nullptr};
     };
 
     /**

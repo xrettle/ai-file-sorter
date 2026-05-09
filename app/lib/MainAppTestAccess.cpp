@@ -33,6 +33,11 @@ QAction* MainAppTestAccess::reset_learning_action(MainApp& app)
     return app.reset_learning_action;
 }
 
+QMenu* MainAppTestAccess::category_language_menu(MainApp& app)
+{
+    return app.category_language_menu;
+}
+
 QMenu* MainAppTestAccess::settings_menu(MainApp& app)
 {
     return app.settings_menu;
@@ -211,6 +216,11 @@ std::string MainAppTestAccess::build_document_prompt_path(const std::string& ful
 
 void MainAppTestAccess::trigger_retranslate(MainApp& app) {
     app.retranslate_ui();
+}
+
+void MainAppTestAccess::refresh_category_language_menu(MainApp& app)
+{
+    app.refresh_category_language_menu();
 }
 
 void MainAppTestAccess::add_categorized_files(MainApp& app, int count) {

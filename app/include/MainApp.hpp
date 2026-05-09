@@ -27,6 +27,7 @@
 #include "Language.hpp"
 
 #include <atomic>
+#include <array>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -309,6 +310,20 @@ private:
     bool ensure_folder_categorization_style(const std::string& folder_path);
     void show_whitelist_manager();
     void apply_whitelist_to_selector();
+    /**
+     * @brief Returns the menu action corresponding to a category language.
+     * @param language Category language to resolve.
+     * @return Matching action, or nullptr when the action is unavailable.
+     */
+    QAction* category_language_action(CategoryLanguage language) const;
+    /**
+     * @brief Refreshes category-language visibility based on the active LLM choice.
+     *
+     * If the current category language is no longer supported by the selected
+     * local model, the setting is reset to English before the checks are
+     * synchronized back into the menu.
+     */
+    void refresh_category_language_menu();
 
     void run_on_ui(std::function<void()> func);
     void run_on_ui_blocking(std::function<void()> func);
@@ -433,15 +448,8 @@ private:
     QAction* turkish_action{nullptr};
     QAction* korean_action{nullptr};
     QActionGroup* category_language_group{nullptr};
-    QAction* category_language_dutch{nullptr};
-    QAction* category_language_english{nullptr};
-    QAction* category_language_french{nullptr};
-    QAction* category_language_german{nullptr};
-    QAction* category_language_italian{nullptr};
-    QAction* category_language_polish{nullptr};
-    QAction* category_language_portuguese{nullptr};
-    QAction* category_language_spanish{nullptr};
-    QAction* category_language_turkish{nullptr};
+    std::array<QAction*, kCategoryLanguageCount> category_language_actions_{};
+    std::vector<QMenu*> category_language_submenus_;
     QAction* about_action{nullptr};
     QAction* quick_start_action{nullptr};
     QAction* faq_action{nullptr};

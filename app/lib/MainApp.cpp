@@ -22,6 +22,7 @@
 #include "VisualLlmRuntime.hpp"
 #include "Types.hpp"
 #include "CategoryLanguage.hpp"
+#include "CategoryLanguageSupport.hpp"
 #include "MainAppUiBuilder.hpp"
 #include "SuitabilityBenchmarkDialog.hpp"
 #include "UiTranslator.hpp"
@@ -129,6 +130,43 @@ std::string trim_ws_copy(const std::string& value) {
     }
     const auto end = value.find_last_not_of(whitespace);
     return value.substr(start, end - start + 1);
+}
+
+QString category_language_sort_key(CategoryLanguage language)
+{
+    return categoryLanguageToString(language);
+}
+
+QString category_language_bucket_label(CategoryLanguage language)
+{
+    const QString key = category_language_sort_key(language);
+    if (key.isEmpty()) {
+        return QStringLiteral("U-Z");
+    }
+
+    const QChar initial = key.front().toUpper();
+    if (initial <= QChar('C')) {
+        return QStringLiteral("A-C");
+    }
+    if (initial <= QChar('F')) {
+        return QStringLiteral("D-F");
+    }
+    if (initial <= QChar('I')) {
+        return QStringLiteral("G-I");
+    }
+    if (initial <= QChar('L')) {
+        return QStringLiteral("J-L");
+    }
+    if (initial <= QChar('O')) {
+        return QStringLiteral("M-O");
+    }
+    if (initial <= QChar('R')) {
+        return QStringLiteral("P-R");
+    }
+    if (initial <= QChar('T')) {
+        return QStringLiteral("S-T");
+    }
+    return QStringLiteral("U-Z");
 }
 
 std::string expand_user_path(const std::string& value) {
@@ -702,6 +740,7 @@ void MainApp::load_settings()
     if (!settings.load()) {
         core_logger->info("Failed to load settings, using defaults.");
     }
+    using_local_llm = !is_remote_choice(settings.get_llm_choice());
     if (development_mode_) {
         development_prompt_logging_enabled_ = settings.get_development_prompt_logging();
     } else {
@@ -728,9 +767,7 @@ void MainApp::sync_settings_to_ui()
 {
     main_window_state_binder_->sync_settings_to_ui();
 
-    if (ui_translator_) {
-        ui_translator_->update_language_checks();
-    }
+    refresh_category_language_menu();
 }
 
 void MainApp::restore_tree_settings()
@@ -776,6 +813,7 @@ void MainApp::retranslate_ui()
         .status_is_ready = status_is_ready_
     };
     ui_translator_->retranslate_all(state);
+    refresh_category_language_menu();
     refresh_backend_status_label();
 }
 
@@ -866,6 +904,78 @@ void MainApp::on_language_selected(Language language)
 void MainApp::on_category_language_selected(CategoryLanguage language)
 {
     settings.set_category_language(language);
+    refresh_category_language_menu();
+}
+
+QAction* MainApp::category_language_action(CategoryLanguage language) const
+{
+    const std::size_t index = categoryLanguageIndex(language);
+    if (index >= category_language_actions_.size()) {
+        return nullptr;
+    }
+    return category_language_actions_[index];
+}
+
+void MainApp::refresh_category_language_menu()
+{
+    const LLMChoice choice = settings.get_llm_choice();
+    const auto& supported_languages = supported_category_languages_for_llm_choice(choice);
+
+    for (const CategoryLanguage language : all_category_languages()) {
+        QAction* const action = category_language_action(language);
+        if (!action) {
+            continue;
+        }
+        const bool supported = is_category_language_supported_for_llm_choice(choice, language);
+        action->setVisible(supported);
+        action->setEnabled(supported);
+    }
+
+    if (category_language_menu) {
+        for (QMenu* const submenu : category_language_submenus_) {
+            delete submenu;
+        }
+        category_language_submenus_.clear();
+        category_language_menu->clear();
+
+        constexpr std::size_t kGroupedMenuThreshold = 18;
+        if (supported_languages.size() > kGroupedMenuThreshold) {
+            QString active_bucket;
+            QMenu* active_submenu = nullptr;
+            for (const CategoryLanguage language : supported_languages) {
+                QAction* const action = category_language_action(language);
+                if (!action) {
+                    continue;
+                }
+
+                const QString bucket = category_language_bucket_label(language);
+                if (!active_submenu || bucket != active_bucket) {
+                    active_bucket = bucket;
+                    active_submenu = category_language_menu->addMenu(bucket);
+                    category_language_submenus_.push_back(active_submenu);
+                }
+                active_submenu->addAction(action);
+            }
+        } else {
+            for (const CategoryLanguage language : supported_languages) {
+                QAction* const action = category_language_action(language);
+                if (action) {
+                    category_language_menu->addAction(action);
+                }
+            }
+        }
+    }
+
+    const CategoryLanguage current = settings.get_category_language();
+    if (!is_category_language_supported_for_llm_choice(choice, current)) {
+        if (current != CategoryLanguage::English) {
+            core_logger->info("Resetting unsupported category language '{}' for LLM choice #{}.",
+                              categoryLanguageDisplay(current),
+                              static_cast<int>(choice));
+        }
+        settings.set_category_language(CategoryLanguage::English);
+    }
+
     if (ui_translator_) {
         ui_translator_->update_language_checks();
     }
@@ -2232,6 +2342,7 @@ void MainApp::show_llm_selection_dialog()
                 settings.set_active_custom_api_id("");
             }
             using_local_llm = !is_remote_choice(settings.get_llm_choice());
+            refresh_category_language_menu();
             settings.save();
             refresh_backend_status_label();
         }

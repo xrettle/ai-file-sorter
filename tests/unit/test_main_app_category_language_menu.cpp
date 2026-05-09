@@ -1,0 +1,244 @@
+#include <catch2/catch_test_macros.hpp>
+
+#include "CategoryLanguageSupport.hpp"
+#include "MainApp.hpp"
+#include "MainAppTestAccess.hpp"
+#include "Settings.hpp"
+#include "TestHelpers.hpp"
+
+#include <QAction>
+#include <QMenu>
+#include <QStringList>
+
+#include <algorithm>
+#include <vector>
+
+#ifndef _WIN32
+namespace {
+
+void collect_menu_languages(QMenu* menu, std::vector<CategoryLanguage>& languages)
+{
+    REQUIRE(menu != nullptr);
+    const QList<QAction*> actions = menu->actions();
+    for (QAction* const action : actions) {
+        if (!action || !action->isVisible()) {
+            continue;
+        }
+        if (QMenu* const submenu = action->menu()) {
+            collect_menu_languages(submenu, languages);
+            continue;
+        }
+        if (!action->data().isValid()) {
+            continue;
+        }
+        languages.push_back(static_cast<CategoryLanguage>(action->data().toInt()));
+    }
+}
+
+void collect_menu_labels(QMenu* menu, QStringList& labels)
+{
+    REQUIRE(menu != nullptr);
+    const QList<QAction*> actions = menu->actions();
+    for (QAction* const action : actions) {
+        if (!action || !action->isVisible()) {
+            continue;
+        }
+        if (QMenu* const submenu = action->menu()) {
+            collect_menu_labels(submenu, labels);
+            continue;
+        }
+        labels.push_back(action->text());
+    }
+}
+
+QAction* find_category_language_action(QMenu* menu, CategoryLanguage language)
+{
+    REQUIRE(menu != nullptr);
+    const QList<QAction*> actions = menu->actions();
+    for (QAction* const action : actions) {
+        if (!action) {
+            continue;
+        }
+        if (QMenu* const submenu = action->menu()) {
+            if (QAction* const nested = find_category_language_action(submenu, language)) {
+                return nested;
+            }
+            continue;
+        }
+        if (action && action->data().toInt() == static_cast<int>(language)) {
+            return action;
+        }
+    }
+    return nullptr;
+}
+
+std::vector<CategoryLanguage> visible_category_languages(MainApp& app)
+{
+    std::vector<CategoryLanguage> languages;
+    QMenu* const menu = MainAppTestAccess::category_language_menu(app);
+    collect_menu_languages(menu, languages);
+    return languages;
+}
+
+QStringList visible_category_language_labels(MainApp& app)
+{
+    QStringList labels;
+    QMenu* const menu = MainAppTestAccess::category_language_menu(app);
+    collect_menu_labels(menu, labels);
+    return labels;
+}
+
+} // namespace
+
+TEST_CASE("Gemma 3 category language menu exposes the full supported list")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+    settings.set_llm_choice(LLMChoice::Local_4b_Gemma);
+
+    MainAppTestAccess::refresh_category_language_menu(window);
+
+    CHECK(visible_category_languages(window)
+          == supported_category_languages_for_llm_choice(LLMChoice::Local_4b_Gemma));
+}
+
+TEST_CASE("Category language menu follows Mistral 7B support")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+    settings.set_llm_choice(LLMChoice::Local_7b);
+
+    MainAppTestAccess::refresh_category_language_menu(window);
+
+    CHECK(visible_category_languages(window)
+          == supported_category_languages_for_llm_choice(LLMChoice::Local_7b));
+}
+
+TEST_CASE("English-only local models force the category language menu back to English")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+    settings.set_category_language(CategoryLanguage::French);
+    settings.set_llm_choice(LLMChoice::Local_7b_Gemma);
+
+    MainAppTestAccess::refresh_category_language_menu(window);
+
+    CHECK(settings.get_category_language() == CategoryLanguage::English);
+    CHECK(visible_category_languages(window)
+          == supported_category_languages_for_llm_choice(LLMChoice::Local_7b_Gemma));
+
+    QAction* const english_action =
+        find_category_language_action(MainAppTestAccess::category_language_menu(window),
+                                      CategoryLanguage::English);
+    REQUIRE(english_action != nullptr);
+    CHECK(english_action->isVisible());
+    CHECK(english_action->isChecked());
+}
+
+TEST_CASE("Custom local models expose the full category language menu")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+    settings.set_llm_choice(LLMChoice::Custom);
+
+    MainAppTestAccess::refresh_category_language_menu(window);
+
+    CHECK(visible_category_languages(window)
+          == supported_category_languages_for_llm_choice(LLMChoice::Custom));
+}
+
+TEST_CASE("Category language menu keeps visible entries alphabetized")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+    settings.set_llm_choice(LLMChoice::Local_4b_Gemma);
+
+    MainAppTestAccess::refresh_category_language_menu(window);
+
+    const QStringList labels = visible_category_language_labels(window);
+    QStringList sorted_labels = labels;
+    std::sort(sorted_labels.begin(),
+              sorted_labels.end(),
+              [](const QString& lhs, const QString& rhs) {
+                  return QString::localeAwareCompare(lhs, rhs) < 0;
+              });
+
+    CHECK(labels == sorted_labels);
+}
+
+TEST_CASE("Full Gemma 3 category language menus are compartmentalized into submenus")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", std::string("offscreen"));
+    QtAppContext qt_context;
+
+    TempDir temp;
+    EnvVarGuard home_guard("HOME", temp.path().string());
+    EnvVarGuard config_guard("AI_FILE_SORTER_CONFIG_DIR", temp.path().string());
+
+    Settings settings;
+    REQUIRE(settings.save());
+
+    MainApp window(settings, /*development_mode=*/false);
+    settings.set_llm_choice(LLMChoice::Local_4b_Gemma);
+
+    MainAppTestAccess::refresh_category_language_menu(window);
+
+    QMenu* const menu = MainAppTestAccess::category_language_menu(window);
+    REQUIRE(menu != nullptr);
+
+    bool has_submenu = false;
+    for (QAction* const action : menu->actions()) {
+        if (action && action->menu()) {
+            has_submenu = true;
+            break;
+        }
+    }
+
+    CHECK(has_submenu);
+}
+#endif

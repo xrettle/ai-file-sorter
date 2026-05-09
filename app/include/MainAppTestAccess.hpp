@@ -63,6 +63,12 @@ public:
      */
     static QAction* reset_learning_action(MainApp& app);
     /**
+     * @brief Access the Settings -> Category language menu.
+     * @param app MainApp instance.
+     * @return Pointer to the menu, or nullptr if unavailable.
+     */
+    static QMenu* category_language_menu(MainApp& app);
+    /**
      * @brief Access the Settings menu.
      * @param app MainApp instance.
      * @return Pointer to the Settings menu, or nullptr if unavailable.
@@ -304,6 +310,11 @@ public:
      * @param app MainApp instance.
      */
     static void trigger_retranslate(MainApp& app);
+    /**
+     * @brief Re-evaluate category-language visibility for the current LLM choice.
+     * @param app MainApp instance.
+     */
+    static void refresh_category_language_menu(MainApp& app);
     /**
      * @brief Record a count of categorized files for metrics.
      * @param app MainApp instance.
