@@ -519,6 +519,29 @@ Procedure: Call `Utils::format_size()` for both values.
 Expected outcome: `999` formats as `999.00 B` and `1024` formats as `1.00 KB`.
 Run: `./build-tests/ai_file_sorter_tests "format_size keeps byte values in bytes below one kilobyte"`
 
+### `tests/unit/test_llm_selection_dialog_local.cpp`
+
+#### Test case: LLM selection dialog lists built-in local models in Gemma Mistral Gemma order
+Purpose: Ensure the categorization-model radio buttons present the built-in local models in the intended top-to-bottom order without a separate recommended badge.
+Setup: Construct the dialog on a clean config directory and collect the visible built-in local-model labels through test access.
+Procedure: Compare the returned labels with the catalog labels for Gemma 4B, Mistral 7B, and Gemma 7B.
+Expected outcome: The dialog lists Gemma 4B first, Mistral 7B second, Gemma 7B third, and none of the labels include `Recommended`.
+Run: `./build-tests/ai_file_sorter_tests "LLM selection dialog lists built-in local models in Gemma Mistral Gemma order"`
+
+#### Test case: LLM selection dialog defaults to the Gemma 4B local model
+Purpose: Verify the built-in local categorization choice defaults to Gemma 4B when no prior selection is stored.
+Setup: Construct the dialog with default settings on a clean config directory.
+Procedure: Read the selected LLM choice from the dialog.
+Expected outcome: The selected built-in choice is `Local_4b_Gemma`.
+Run: `./build-tests/ai_file_sorter_tests "LLM selection dialog defaults to the Gemma 4B local model"`
+
+#### Test case: LLM selection dialog keeps the legacy LLaMa choice when the previous Q4 artifact exists
+Purpose: Ensure the legacy built-in LLaMa option still appears for users who only have the older pre-Gemma Q4 artifact on disk.
+Setup: Write the historical `Llama-3.2-3B-Instruct-bf16-q4_k.gguf` file into the default local LLM cache and preselect `Local_3b_legacy`.
+Procedure: Construct the dialog and read back the selected choice.
+Expected outcome: The dialog keeps `Local_3b_legacy` selected instead of silently falling back to Gemma 4B.
+Run: `./build-tests/ai_file_sorter_tests "LLM selection dialog keeps the legacy LLaMa choice when the previous Q4 artifact exists"`
+
 ### `tests/unit/test_llm_selection_dialog_visual.cpp` (non-Windows only)
 
 #### Test case: Visual model entry shows missing env var state
@@ -902,6 +925,27 @@ Setup: Insert a custom LLM entry and set it as active, then save settings.
 Procedure: Reload settings and retrieve the custom LLM by ID.
 Expected outcome: The reloaded entry matches the original fields and the active ID is preserved.
 Run: `./build-tests/ai_file_sorter_tests "Custom LLM entries persist across Settings load/save"`
+
+#### Test case: Settings maps legacy Local_3b choices to Gemma 4B
+Purpose: Preserve compatibility for older configs that still store the previous built-in 3B identifier.
+Setup: Write a minimal config file with `LLMChoice=Local_3b`.
+Procedure: Load settings from that config.
+Expected outcome: The loaded LLM choice is `Local_4b_Gemma`.
+Run: `./build-tests/ai_file_sorter_tests "Settings maps legacy Local_3b choices to Gemma 4B"`
+
+#### Test case: Built-in Gemma 7B choice persists across Settings load/save
+Purpose: Ensure the new built-in Gemma 7B choice round-trips through settings persistence.
+Setup: Set the LLM choice to `Local_7b_Gemma` and save settings in a clean config directory.
+Procedure: Reload settings from disk.
+Expected outcome: The reloaded LLM choice remains `Local_7b_Gemma`.
+Run: `./build-tests/ai_file_sorter_tests "Built-in Gemma 7B choice persists across Settings load/save"`
+
+#### Test case: Legacy local LLaMa resolves the previous Q4 artifact without marking Gemma 4B ready
+Purpose: Preserve compatibility for users who still have the old built-in LLaMa Q4 artifact while preventing that artifact from being mistaken for the new Gemma 4B slot.
+Setup: Write the historical `Llama-3.2-3B-Instruct-bf16-q4_k.gguf` file into the default local LLM cache on a clean HOME/config directory.
+Procedure: Resolve the downloaded path for `Local_3b_legacy` and query local availability for both the legacy LLaMa and Gemma 4B built-in choices.
+Expected outcome: The legacy choice resolves to the old Q4 file, reports available, and the Gemma 4B choice still reports unavailable.
+Run: `./build-tests/ai_file_sorter_tests "Legacy local LLaMa resolves the previous Q4 artifact without marking Gemma 4B ready"`
 
 ### `tests/unit/test_database_manager_rename_only.cpp`
 

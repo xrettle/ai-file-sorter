@@ -1,3 +1,4 @@
+#include "LlmCatalog.hpp"
 #include "VisualLlmRuntime.hpp"
 
 #include "Utils.hpp"
@@ -31,27 +32,9 @@ std::optional<std::filesystem::path> VisualLlmRuntime::Backend::path_for(VisualM
 
 bool VisualLlmRuntime::default_text_llm_files_available()
 {
-    static const char* kEnvVars[] = {
-        "LOCAL_LLM_3B_DOWNLOAD_URL",
-        "LOCAL_LLM_3B_LEGACY_DOWNLOAD_URL",
-        "LOCAL_LLM_7B_DOWNLOAD_URL"
-    };
-
-    for (const char* env_key : kEnvVars) {
-        const char* env_url = std::getenv(env_key);
-        if (!env_url || *env_url == '\0') {
-            continue;
-        }
-
-        try {
-            const std::filesystem::path path =
-                Utils::make_default_path_to_file_from_download_url(env_url);
-            std::error_code ec;
-            if (!path.empty() && std::filesystem::exists(path, ec)) {
-                return true;
-            }
-        } catch (...) {
-            continue;
+    for (const auto& entry : default_llm_entries()) {
+        if (builtin_llm_artifact_available(entry.choice)) {
+            return true;
         }
     }
 

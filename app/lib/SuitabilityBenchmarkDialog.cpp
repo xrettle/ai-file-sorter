@@ -118,7 +118,7 @@ double read_env_double(const char* key, double fallback)
 PerfThresholds thresholds_for_choice(LLMChoice choice)
 {
     switch (choice) {
-    case LLMChoice::Local_3b:
+    case LLMChoice::Local_4b_Gemma:
         return PerfThresholds{
             read_env_double("BENCH_CAT_LOCAL_3B_OPTIMAL_MAX", 2.0),
             read_env_double("BENCH_CAT_LOCAL_3B_ACCEPTABLE_MAX", 5.0)};
@@ -130,6 +130,10 @@ PerfThresholds thresholds_for_choice(LLMChoice choice)
         return PerfThresholds{
             read_env_double("BENCH_CAT_LOCAL_7B_OPTIMAL_MAX", 8.0),
             read_env_double("BENCH_CAT_LOCAL_7B_ACCEPTABLE_MAX", 12.0)};
+    case LLMChoice::Local_7b_Gemma:
+        return PerfThresholds{
+            read_env_double("BENCH_CAT_LOCAL_7B_GEMMA_OPTIMAL_MAX", 8.0),
+            read_env_double("BENCH_CAT_LOCAL_7B_GEMMA_ACCEPTABLE_MAX", 12.0)};
     default:
         return PerfThresholds{
             read_env_double("BENCH_CAT_DEFAULT_OPTIMAL_MAX", 5.0),
@@ -140,7 +144,7 @@ PerfThresholds thresholds_for_choice(LLMChoice choice)
 PerfThresholds thresholds_for_document_choice(LLMChoice choice)
 {
     switch (choice) {
-    case LLMChoice::Local_3b:
+    case LLMChoice::Local_4b_Gemma:
         return PerfThresholds{
             read_env_double("BENCH_DOC_LOCAL_3B_OPTIMAL_MAX", 4.0),
             read_env_double("BENCH_DOC_LOCAL_3B_ACCEPTABLE_MAX", 7.0)};
@@ -152,6 +156,10 @@ PerfThresholds thresholds_for_document_choice(LLMChoice choice)
         return PerfThresholds{
             read_env_double("BENCH_DOC_LOCAL_7B_OPTIMAL_MAX", 12.0),
             read_env_double("BENCH_DOC_LOCAL_7B_ACCEPTABLE_MAX", 15.0)};
+    case LLMChoice::Local_7b_Gemma:
+        return PerfThresholds{
+            read_env_double("BENCH_DOC_LOCAL_7B_GEMMA_OPTIMAL_MAX", 12.0),
+            read_env_double("BENCH_DOC_LOCAL_7B_GEMMA_ACCEPTABLE_MAX", 15.0)};
     default:
         return PerfThresholds{
             read_env_double("BENCH_DOC_DEFAULT_OPTIMAL_MAX", 8.0),

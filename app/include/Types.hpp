@@ -8,9 +8,10 @@ enum class LLMChoice {
     Remote_OpenAI,
     Remote_Gemini,
     Remote_Custom, ///< Custom OpenAI-compatible endpoint.
-    Local_3b,
+    Local_4b_Gemma,
     Local_3b_legacy,
     Local_7b,
+    Local_7b_Gemma,
     Custom
 };
 

@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <QLabel>
 #include <QProgressBar>
@@ -28,6 +29,12 @@ public:
     static VisualEntryRefs visual_entry_for_env_var(LLMSelectionDialog& dialog, const std::string& env_var);
     static std::string selected_visual_model_id(const LLMSelectionDialog& dialog);
     static std::string selected_visual_model_label(const LLMSelectionDialog& dialog);
+    /**
+     * @brief Returns the visible built-in local model labels in top-to-bottom dialog order.
+     * @param dialog Selection dialog instance under test.
+     * @return Ordered list of built-in local model labels.
+     */
+    static std::vector<std::string> local_builtin_labels(const LLMSelectionDialog& dialog);
     static void select_visual_backend(LLMSelectionDialog& dialog, const std::string& backend_id);
     static void set_network_available_override(LLMSelectionDialog& dialog, std::optional<bool> value);
 };

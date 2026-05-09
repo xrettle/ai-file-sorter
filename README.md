@@ -112,7 +112,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 ## Features
 
-- **AI-Powered Categorization**: Classify files intelligently using either a **local LLM** (Llama, Mistral) or a remote model (ChatGPT with your own OpenAI API key, or Gemini with your own Gemini API key).
+- **AI-Powered Categorization**: Classify files intelligently using either a **local LLM** (Gemma, Mistral, or your own GGUF) or a remote model (ChatGPT with your own OpenAI API key, or Gemini with your own Gemini API key).
 - **Offline-Friendly**: Use a local LLM to categorize files entirely - no internet or API key required.
 - **Robust categorization**: Taxonomy and heuristics help keep labels more consistent across runs.
 - **Customizable sorting rules**: Automatically assign categories and subcategories for granular organization.

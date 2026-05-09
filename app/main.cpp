@@ -5,6 +5,7 @@
 #include "ImageAnalyzerFactory.hpp"
 #include "ImageAnalyzer.hpp"
 #include "Logger.hpp"
+#include "LlmCatalog.hpp"
 #include "MainApp.hpp"
 #include "SingleInstanceCoordinator.hpp"
 #include "UpdaterBuildConfig.hpp"
@@ -366,23 +367,6 @@ bool file_exists(const std::string& path)
     return std::filesystem::exists(std::filesystem::path(path), ec);
 }
 
-bool has_local_model_for_env(const char* env_key)
-{
-    if (!env_key) {
-        return false;
-    }
-    const char* url = std::getenv(env_key);
-    if (!url || *url == '\0') {
-        return false;
-    }
-    try {
-        const std::string path = Utils::make_default_path_to_file_from_download_url(url);
-        return file_exists(path);
-    } catch (...) {
-        return false;
-    }
-}
-
 bool llm_choice_is_ready(const Settings& settings)
 {
     const LLMChoice choice = settings.get_llm_choice();
@@ -418,21 +402,7 @@ bool llm_choice_is_ready(const Settings& settings)
             && file_exists(custom.path);
     }
 
-    const char* env_var = nullptr;
-    switch (choice) {
-        case LLMChoice::Local_3b:
-            env_var = "LOCAL_LLM_3B_DOWNLOAD_URL";
-            break;
-        case LLMChoice::Local_3b_legacy:
-            env_var = "LOCAL_LLM_3B_LEGACY_DOWNLOAD_URL";
-            break;
-        case LLMChoice::Local_7b:
-            env_var = "LOCAL_LLM_7B_DOWNLOAD_URL";
-            break;
-        default:
-            break;
-    }
-    return has_local_model_for_env(env_var);
+    return builtin_llm_artifact_available(choice);
 }
 
 bool ensure_llm_choice(Settings& settings, const std::function<void()>& finish_splash)

@@ -164,26 +164,34 @@ LLMSelectionDialog::LLMSelectionDialog(Settings& settings, QWidget* parent)
     case LLMChoice::Remote_Custom:
         custom_api_radio->setChecked(true);
         break;
-    case LLMChoice::Local_3b:
+    case LLMChoice::Local_4b_Gemma:
         local3_radio->setChecked(true);
         break;
     case LLMChoice::Local_3b_legacy:
-        if (local3_legacy_radio && local3_legacy_radio->isVisible()) {
+        if (local3_legacy_radio && !local3_legacy_radio->isHidden()) {
             local3_legacy_radio->setChecked(true);
         } else {
             local3_radio->setChecked(true);
-            selected_choice = LLMChoice::Local_3b;
+            selected_choice = LLMChoice::Local_4b_Gemma;
         }
         break;
     case LLMChoice::Local_7b:
         local7_radio->setChecked(true);
+        break;
+    case LLMChoice::Local_7b_Gemma:
+        if (local7_gemma_radio) {
+            local7_gemma_radio->setChecked(true);
+        } else {
+            local3_radio->setChecked(true);
+            selected_choice = LLMChoice::Local_4b_Gemma;
+        }
         break;
     case LLMChoice::Custom:
         custom_radio->setChecked(true);
         break;
     default:
         local3_radio->setChecked(true);
-        selected_choice = LLMChoice::Local_3b;
+        selected_choice = LLMChoice::Local_4b_Gemma;
         break;
     }
     refresh_custom_lists();
@@ -237,23 +245,27 @@ void LLMSelectionDialog::setup_ui()
     auto* radio_layout = new QVBoxLayout(radio_container);
     radio_layout->setSpacing(10);
 
+    local3_radio = new QRadioButton(default_llm_label_for_choice(LLMChoice::Local_4b_Gemma), radio_container);
+    local3_radio->setStyleSheet(QStringLiteral("color: #1f6feb;"));
+    auto* local3_desc = new QLabel(
+        tr("Balanced local model for categorization with lower hardware requirements than 7B models.\nSupports: Nvidia (CUDA), Apple (Metal), CPU."),
+        radio_container);
+    local3_desc->setWordWrap(true);
+
     local7_radio = new QRadioButton(default_llm_label_for_choice(LLMChoice::Local_7b), radio_container);
     local7_radio->setStyleSheet(QStringLiteral("color: #1f6feb;"));
-    auto* local7_desc = new QLabel(tr("Larger local model. Slower on CPU, but performs much better with GPU acceleration.\nSupports: Nvidia (CUDA), Apple (Metal), CPU."), radio_container);
+    auto* local7_desc = new QLabel(
+        tr("Larger local model. Slower on CPU, but performs much better with GPU acceleration.\nSupports: Nvidia (CUDA), Apple (Metal), CPU."),
+        radio_container);
     local7_desc->setWordWrap(true);
 
-    local3_radio = new QRadioButton(default_llm_label_for_choice(LLMChoice::Local_3b), radio_container);
-    local3_radio->setStyleSheet(QStringLiteral("color: #1f6feb;"));
-    auto* local3_row = new QWidget(radio_container);
-    auto* local3_row_layout = new QHBoxLayout(local3_row);
-    local3_row_layout->setContentsMargins(0, 0, 0, 0);
-    auto* local3_recommended = new QLabel(tr("Recommended"), local3_row);
-    local3_recommended->setStyleSheet(QStringLiteral("color: #1f6feb; font-weight: 700;"));
-    local3_row_layout->addWidget(local3_radio);
-    local3_row_layout->addWidget(local3_recommended);
-    local3_row_layout->addStretch(1);
-    auto* local3_desc = new QLabel(tr("Smaller local model that works quickly even on CPUs. Good for lightweight local use."), radio_container);
-    local3_desc->setWordWrap(true);
+    local7_gemma_radio =
+        new QRadioButton(default_llm_label_for_choice(LLMChoice::Local_7b_Gemma), radio_container);
+    local7_gemma_radio->setStyleSheet(QStringLiteral("color: #1f6feb;"));
+    auto* local7_gemma_desc = new QLabel(
+        tr("Alternative 7B local model with strong instruction following. Best with GPU acceleration.\nSupports: Nvidia (CUDA), Apple (Metal), CPU."),
+        radio_container);
+    local7_gemma_desc->setWordWrap(true);
 
     local3_legacy_radio = new QRadioButton(default_llm_label_for_choice(LLMChoice::Local_3b_legacy), radio_container);
     local3_legacy_radio->setStyleSheet(QStringLiteral("color: #1f6feb;"));
@@ -397,10 +409,12 @@ void LLMSelectionDialog::setup_ui()
     custom_layout->addWidget(delete_custom_button);
     custom_layout->addStretch(1);
 
-    radio_layout->addWidget(local3_row);
+    radio_layout->addWidget(local3_radio);
     radio_layout->addWidget(local3_desc);
     radio_layout->addWidget(local7_radio);
     radio_layout->addWidget(local7_desc);
+    radio_layout->addWidget(local7_gemma_radio);
+    radio_layout->addWidget(local7_gemma_desc);
     radio_layout->addWidget(local3_legacy_radio);
     radio_layout->addWidget(local3_legacy_desc);
     radio_layout->addWidget(gemini_radio);
@@ -425,6 +439,7 @@ void LLMSelectionDialog::setup_ui()
         llm_group->addButton(local3_legacy_radio);
     }
     llm_group->addButton(local7_radio);
+    llm_group->addButton(local7_gemma_radio);
     llm_group->addButton(custom_radio);
 
     layout->addWidget(radio_container);
@@ -690,18 +705,7 @@ void LLMSelectionDialog::set_status_message(const QString& message)
 
 bool LLMSelectionDialog::legacy_local_3b_available() const
 {
-    const char* env_url = std::getenv("LOCAL_LLM_3B_LEGACY_DOWNLOAD_URL");
-    if (!env_url || *env_url == '\0') {
-        return false;
-    }
-    std::string path;
-    try {
-        path = Utils::make_default_path_to_file_from_download_url(env_url);
-    } catch (...) {
-        return false;
-    }
-    std::error_code ec;
-    return !path.empty() && std::filesystem::exists(path, ec);
+    return builtin_llm_artifact_available(LLMChoice::Local_3b_legacy);
 }
 
 void LLMSelectionDialog::update_legacy_local_3b_visibility()
@@ -728,9 +732,10 @@ void LLMSelectionDialog::update_ui_for_choice()
     update_custom_api_choice_ui();
     update_visual_llm_downloads();
 
-    const bool is_local_builtin = (selected_choice == LLMChoice::Local_3b
+    const bool is_local_builtin = (selected_choice == LLMChoice::Local_4b_Gemma
         || selected_choice == LLMChoice::Local_3b_legacy
-        || selected_choice == LLMChoice::Local_7b);
+        || selected_choice == LLMChoice::Local_7b
+        || selected_choice == LLMChoice::Local_7b_Gemma);
 
     if (selected_choice == LLMChoice::Custom || is_remote_choice(selected_choice) || !is_local_builtin) {
         return;
@@ -750,9 +755,11 @@ void LLMSelectionDialog::update_radio_selection()
     } else if (local3_legacy_radio && local3_legacy_radio->isChecked()) {
         selected_choice = LLMChoice::Local_3b_legacy;
     } else if (local3_radio->isChecked()) {
-        selected_choice = LLMChoice::Local_3b;
+        selected_choice = LLMChoice::Local_4b_Gemma;
     } else if (local7_radio->isChecked()) {
         selected_choice = LLMChoice::Local_7b;
+    } else if (local7_gemma_radio && local7_gemma_radio->isChecked()) {
+        selected_choice = LLMChoice::Local_7b_Gemma;
     } else if (custom_radio->isChecked()) {
         selected_choice = LLMChoice::Custom;
     }
@@ -763,9 +770,10 @@ void LLMSelectionDialog::update_custom_choice_ui()
     if (!ok_button && button_box) {
         ok_button = button_box->button(QDialogButtonBox::Ok);
     }
-    const bool is_local_builtin = (selected_choice == LLMChoice::Local_3b
+    const bool is_local_builtin = (selected_choice == LLMChoice::Local_4b_Gemma
         || selected_choice == LLMChoice::Local_3b_legacy
-        || selected_choice == LLMChoice::Local_7b);
+        || selected_choice == LLMChoice::Local_7b
+        || selected_choice == LLMChoice::Local_7b_Gemma);
     const bool is_remote_openai = selected_choice == LLMChoice::Remote_OpenAI;
     const bool is_remote_gemini = selected_choice == LLMChoice::Remote_Gemini;
     const bool is_remote_custom = selected_choice == LLMChoice::Remote_Custom;
@@ -962,6 +970,9 @@ void LLMSelectionDialog::update_local_download_choice_enabled_state()
     if (local7_radio) {
         local7_radio->setEnabled(allow_switch || local7_radio->isChecked());
     }
+    if (local7_gemma_radio) {
+        local7_gemma_radio->setEnabled(allow_switch || local7_gemma_radio->isChecked());
+    }
 }
 
 void LLMSelectionDialog::update_local_choice_ui()
@@ -1047,7 +1058,7 @@ void LLMSelectionDialog::update_local_choice_ui()
 
 void LLMSelectionDialog::refresh_downloader()
 {
-    const std::string env_var = current_download_env_var();
+    const std::string env_var = default_llm_download_env_var_for_choice(selected_choice);
     if (env_var.empty()) {
         downloader.reset();
         set_status_message(tr("Unsupported LLM selection."));
@@ -1061,13 +1072,25 @@ void LLMSelectionDialog::refresh_downloader()
         return;
     }
 
-    if (!downloader) {
-        downloader = std::make_unique<LLMDownloader>(env_url);
-    } else if (downloader->get_download_url() != env_url) {
+    const std::filesystem::path preferred_path = preferred_builtin_llm_path(selected_choice);
+    const std::optional<std::filesystem::path> downloaded_path =
+        resolve_downloaded_builtin_llm_path(selected_choice);
+    const std::string explicit_path =
+        (downloaded_path && !preferred_path.empty() && *downloaded_path != preferred_path)
+            ? Utils::path_to_utf8(*downloaded_path)
+            : std::string();
+
+    const bool needs_rebuild = !downloader
+        || downloader->get_download_url() != env_url
+        || (!explicit_path.empty() && downloader->get_download_destination() != explicit_path)
+        || (explicit_path.empty() && !preferred_path.empty()
+            && downloader->get_download_destination() != Utils::path_to_utf8(preferred_path));
+
+    if (needs_rebuild) {
         if (is_downloading.load()) {
             return;
         }
-        downloader->set_download_url(env_url);
+        downloader = std::make_unique<LLMDownloader>(env_url, explicit_path);
     }
 
     if (downloader->get_local_download_status() == LLMDownloader::DownloadStatus::InProgress) {
@@ -2043,20 +2066,6 @@ void LLMSelectionDialog::start_download()
 }
 
 
-std::string LLMSelectionDialog::current_download_env_var() const
-{
-    if (selected_choice == LLMChoice::Local_3b) {
-        return "LOCAL_LLM_3B_DOWNLOAD_URL";
-    }
-    if (selected_choice == LLMChoice::Local_3b_legacy) {
-        return "LOCAL_LLM_3B_LEGACY_DOWNLOAD_URL";
-    }
-    if (selected_choice == LLMChoice::Local_7b) {
-        return "LOCAL_LLM_7B_DOWNLOAD_URL";
-    }
-    return std::string();
-}
-
 #if defined(AI_FILE_SORTER_TEST_BUILD)
 
 LLMSelectionDialogTestAccess::VisualEntryRefs LLMSelectionDialogTestAccess::llava_model_entry(LLMSelectionDialog& dialog)
@@ -2137,6 +2146,22 @@ std::string LLMSelectionDialogTestAccess::selected_visual_model_label(const LLMS
         return {};
     }
     return dialog.visual_backend_combo->currentText().toStdString();
+}
+
+std::vector<std::string> LLMSelectionDialogTestAccess::local_builtin_labels(
+    const LLMSelectionDialog& dialog)
+{
+    std::vector<std::string> labels;
+    if (dialog.local3_radio) {
+        labels.push_back(dialog.local3_radio->text().toStdString());
+    }
+    if (dialog.local7_radio) {
+        labels.push_back(dialog.local7_radio->text().toStdString());
+    }
+    if (dialog.local7_gemma_radio) {
+        labels.push_back(dialog.local7_gemma_radio->text().toStdString());
+    }
+    return labels;
 }
 
 void LLMSelectionDialogTestAccess::select_visual_backend(LLMSelectionDialog& dialog,

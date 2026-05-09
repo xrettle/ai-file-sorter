@@ -124,9 +124,10 @@ std::string llm_choice_to_string(LLMChoice choice) {
         case LLMChoice::Remote_OpenAI: return "Remote_OpenAI";
         case LLMChoice::Remote_Gemini: return "Remote_Gemini";
         case LLMChoice::Remote_Custom: return "Remote_Custom";
-        case LLMChoice::Local_3b: return "Local_3b";
+        case LLMChoice::Local_4b_Gemma: return "Local_4b_Gemma";
         case LLMChoice::Local_3b_legacy: return "Local_3b_legacy";
         case LLMChoice::Local_7b: return "Local_7b";
+        case LLMChoice::Local_7b_Gemma: return "Local_7b_Gemma";
         case LLMChoice::Custom: return "Custom";
         default: return "Unset";
     }
@@ -179,6 +180,7 @@ Language system_default_language()
     switch (QLocale::system().language()) {
         case QLocale::French: return Language::French;
         case QLocale::German: return Language::German;
+        case QLocale::Hindi: return Language::Hindi;
         case QLocale::Italian: return Language::Italian;
         case QLocale::Spanish: return Language::Spanish;
         case QLocale::Turkish: return Language::Turkish;
@@ -279,9 +281,10 @@ LLMChoice Settings::parse_llm_choice() const
     if (value == "Remote" || value == "Remote_OpenAI") return LLMChoice::Remote_OpenAI;
     if (value == "Remote_Gemini") return LLMChoice::Remote_Gemini;
     if (value == "Remote_Custom") return LLMChoice::Remote_Custom;
-    if (value == "Local_3b") return LLMChoice::Local_3b;
+    if (value == "Local_3b" || value == "Local_4b_Gemma") return LLMChoice::Local_4b_Gemma;
     if (value == "Local_3b_legacy") return LLMChoice::Local_3b_legacy;
     if (value == "Local_7b") return LLMChoice::Local_7b;
+    if (value == "Local_7b_Gemma") return LLMChoice::Local_7b_Gemma;
     if (value == "Custom")   return LLMChoice::Custom;
     return LLMChoice::Unset;
 }
@@ -582,11 +585,6 @@ bool Settings::load()
     };
 
     load_basic_settings(load_bool, load_int);
-    if (llm_choice == LLMChoice::Local_3b
-        && !file_exists_for_env_url("LOCAL_LLM_3B_DOWNLOAD_URL")
-        && file_exists_for_env_url("LOCAL_LLM_3B_LEGACY_DOWNLOAD_URL")) {
-        llm_choice = LLMChoice::Local_3b_legacy;
-    }
     load_whitelist_settings(load_bool);
     load_custom_llm_settings();
     load_custom_api_settings();

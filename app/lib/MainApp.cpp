@@ -8,6 +8,7 @@
 #include "DialogUtils.hpp"
 #include "ErrorMessages.hpp"
 #include "LLMClient.hpp"
+#include "LlmCatalog.hpp"
 #include "GeminiClient.hpp"
 #include "LocalFsProvider.hpp"
 #include "LLMSelectionDialog.hpp"
@@ -2414,28 +2415,14 @@ std::unique_ptr<ILLMClient> MainApp::make_llm_client()
         return client;
     }
 
-    const char* env_var = nullptr;
-    switch (choice) {
-        case LLMChoice::Local_3b:
-            env_var = "LOCAL_LLM_3B_DOWNLOAD_URL";
-            break;
-        case LLMChoice::Local_3b_legacy:
-            env_var = "LOCAL_LLM_3B_LEGACY_DOWNLOAD_URL";
-            break;
-        case LLMChoice::Local_7b:
-            env_var = "LOCAL_LLM_7B_DOWNLOAD_URL";
-            break;
-        default:
-            break;
-    }
-
-    const char* env_url = env_var ? std::getenv(env_var) : nullptr;
-    if (!env_url) {
+    const std::filesystem::path model_path =
+        resolve_downloaded_builtin_llm_path(choice).value_or(preferred_builtin_llm_path(choice));
+    if (model_path.empty()) {
         throw std::runtime_error("Required environment variable for selected model is not set");
     }
 
     auto client = std::make_unique<LocalLLMClient>(
-        Utils::make_default_path_to_file_from_download_url(env_url),
+        Utils::path_to_utf8(model_path),
         [this](const std::string& reason) { return prompt_text_cpu_fallback(reason); });
     client->set_status_callback([handle_local_llm_status](LocalLLMClient::Status status) {
         handle_local_llm_status(status);

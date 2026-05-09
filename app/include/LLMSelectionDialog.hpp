@@ -115,7 +115,6 @@ private:
     void handle_delete_download();
     void refresh_downloader();
     void set_status_message(const QString& message);
-    std::string current_download_env_var() const;
     void refresh_custom_lists();
     /**
      * @brief Refresh the custom API dropdown list.
@@ -191,6 +190,7 @@ private:
     QRadioButton* local3_radio{nullptr};
     QRadioButton* local3_legacy_radio{nullptr};
     QRadioButton* local7_radio{nullptr};
+    QRadioButton* local7_gemma_radio{nullptr};
     QRadioButton* custom_radio{nullptr};
     QToolButton* download_toggle_button{nullptr};
     QScrollArea* scroll_area_{nullptr};
