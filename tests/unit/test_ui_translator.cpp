@@ -92,6 +92,7 @@ struct UiTranslatorTestHarness {
     QAction* dutch_action = new QAction(&window);
     QAction* french_action = new QAction(&window);
     QAction* german_action = new QAction(&window);
+    QAction* hindi_action = new QAction(&window);
     QAction* italian_action = new QAction(&window);
     QAction* spanish_action = new QAction(&window);
     QAction* turkish_action = new QAction(&window);
@@ -151,6 +152,8 @@ struct UiTranslatorTestHarness {
         french_action->setData(static_cast<int>(Language::French));
         german_action->setCheckable(true);
         german_action->setData(static_cast<int>(Language::German));
+        hindi_action->setCheckable(true);
+        hindi_action->setData(static_cast<int>(Language::Hindi));
         italian_action->setCheckable(true);
         italian_action->setData(static_cast<int>(Language::Italian));
         spanish_action->setCheckable(true);
@@ -163,6 +166,7 @@ struct UiTranslatorTestHarness {
         language_group->addAction(dutch_action);
         language_group->addAction(french_action);
         language_group->addAction(german_action);
+        language_group->addAction(hindi_action);
         language_group->addAction(italian_action);
         language_group->addAction(spanish_action);
         language_group->addAction(turkish_action);
@@ -234,6 +238,7 @@ struct UiTranslatorTestHarness {
                 dutch_action,
                 french_action,
                 german_action,
+                hindi_action,
                 italian_action,
                 spanish_action,
                 turkish_action,
@@ -259,6 +264,7 @@ struct UiTranslatorTestHarness {
                 dutch_action,
                 french_action,
                 german_action,
+                hindi_action,
                 italian_action,
                 spanish_action,
                 turkish_action,
@@ -319,9 +325,14 @@ void verify_primary_controls(const UiTranslatorTestHarness& h)
 void verify_menus_and_actions(const UiTranslatorTestHarness& h)
 {
     REQUIRE(h.file_menu->title() == QStringLiteral("&File"));
+    REQUIRE(h.edit_menu->title() == QStringLiteral("&Edit"));
+    REQUIRE(h.view_menu->title() == QStringLiteral("&View"));
     REQUIRE(h.settings_menu->title() == QStringLiteral("&Settings"));
     REQUIRE(h.plugins_menu->title() == QStringLiteral("&Plugins"));
+    REQUIRE(h.development_menu->title() == QStringLiteral("&Development"));
     REQUIRE(h.test_menu->title() == QStringLiteral("&Tests"));
+    REQUIRE(h.language_menu->title() == QStringLiteral("Interface &language"));
+    REQUIRE(h.category_language_menu->title() == QStringLiteral("Category &language"));
     REQUIRE(h.run_benchmark_action->text() == QStringLiteral("System compatibility check…"));
     REQUIRE(h.toggle_llm_action->text() == QStringLiteral("Select &LLM…"));
     REQUIRE(h.manage_storage_plugins_action->text() == QStringLiteral("Manage storage plugins…"));

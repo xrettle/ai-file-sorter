@@ -338,9 +338,9 @@ Run: `./build-tests/ai_file_sorter_tests "Test mode can use an isolated runtime 
 
 #### Test case: UiTranslator updates menus, actions, and controls
 Purpose: Validate that the UI translator updates all primary controls, menus, and stateful labels in a consistent pass.
-Setup: Build a test harness with a `QMainWindow`, many UI controls, and a translator state set to French in settings. Use a translation function that returns the input string to test label wiring rather than actual translation files.
-Procedure: Call `retranslate_all()` and verify the text of buttons, checkboxes, menus, status labels, and the file explorer dock title. Also verify the language action group selection.
-Expected outcome: All UI elements show the expected English strings, including the `Reset learned behavior…` and `Clear cache…` Settings actions, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
+Setup: Build a test harness with a `QMainWindow`, many UI controls, a full interface-language action group that now includes Hindi, and a translator state set to French in settings. Use a translation function that returns the input string to test label wiring rather than actual translation files.
+Procedure: Call `retranslate_all()` and verify the text of buttons, checkboxes, top-level menus, language menus, status labels, and the file explorer dock title. Also verify the language action group selection.
+Expected outcome: All UI elements show the expected English strings, including File/Edit/View, the interface/category language menus, the `Reset learned behavior…` and `Clear cache…` Settings actions, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
 Run: `./build-tests/ai_file_sorter_tests "*UiTranslator updates menus*"`
 
 ### `tests/unit/test_cache_maintenance_service.cpp`
@@ -1251,18 +1251,34 @@ Purpose: Validate that main window labels update for all supported UI languages.
 Setup: Construct `MainApp` with a settings object and a translation manager.
 Procedure: Iterate through supported languages, set the language, trigger a retranslate, and read the analyze button and folder label text.
 Expected outcome: Each language produces the exact expected translations for the two labels.
+This now explicitly includes Hindi.
 Run: `./build-tests/ai_file_sorter_tests "MainApp retranslate reflects language changes"`
+
+#### Test case: Top-level menu titles are translated for all supported UI languages
+Purpose: Verify the main menu-bar labels are covered by the translation catalogs for every shipped interface language.
+Setup: Iterate all supported UI languages through the translation manager.
+Procedure: Translate the `UiTranslator` menu titles for File, Edit, View, Settings, Plugins, Development, Tests, Interface language, and Category language through `QCoreApplication::translate(...)`.
+Expected outcome: Each supported language returns the exact expected localized menu labels, including the Hindi `Edit` and `View` entries.
+Run: `./build-tests/ai_file_sorter_tests "Top-level menu titles are translated for all supported UI languages"`
+
+#### Test case: Settings menu actions are translated for all supported UI languages
+Purpose: Verify the visible Settings-menu action labels are localized rather than falling back to English source text.
+Setup: Iterate all supported UI languages through the translation manager.
+Procedure: Translate `System compatibility check…`, `Select &LLM…`, `Manage category whitelists…`, `Interface &language`, `Category &language`, `Reset learned behavior…`, and `Clear cache…` through `QCoreApplication::translate(...)`.
+Expected outcome: Each supported language returns the expected localized action labels, including the Hindi entries shown in the Settings menu.
+Run: `./build-tests/ai_file_sorter_tests "Settings menu actions are translated for all supported UI languages"`
 
 #### Test case: Updater strings are translated for all supported UI languages
 Purpose: Verify updater and installer UI text exists across supported languages.
 Setup: Iterate the supported UI languages through the translation manager.
 Procedure: Read translated updater labels, errors, progress strings, and changelog headings.
 Expected outcome: Each supported language returns the expected localized updater strings.
+This now explicitly includes Hindi.
 Run: `./build-tests/ai_file_sorter_tests "Updater strings are translated for all supported UI languages"`
 
 #### Test case: Quick Start guide content follows the selected app language
 Purpose: Ensure the local Quick Start guide body follows the active app language.
-Setup: Set the translation manager to English, French, and Korean.
+Setup: Set the translation manager to English, French, Korean, and Hindi.
 Procedure: Resolve the Quick Start markdown for each selected language.
 Expected outcome: Each language loads the matching localized markdown content instead of the English fallback when a translation exists.
 Run: `./build-tests/ai_file_sorter_tests "Quick Start guide content follows the selected app language"`
@@ -1278,7 +1294,7 @@ Run: `./build-tests/ai_file_sorter_tests "Quick Start and FAQ help labels are tr
 
 #### Translation catalog sync check
 Purpose: Ensure the committed `.ts` catalogs do not miss any currently used GUI source strings.
-Setup: Create temporary copies of all supported UI language catalogs and locate Qt 6 `lupdate`/`lrelease`.
+Setup: Create temporary copies of all supported UI language catalogs, including Hindi, and locate Qt 6 `lupdate`/`lrelease`.
 Procedure: Run `lupdate` against `app/startapp_windows.cpp`, `app/lib/*.cpp`, and `app/include/*.hpp`, then scan the temporary catalogs for newly introduced `unfinished` entries.
 Expected outcome: No temporary catalog contains unfinished entries, which means the source tree and translation catalogs are in sync.
 Run: `./tests/run_translation_tests.sh`

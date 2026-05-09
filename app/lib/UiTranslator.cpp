@@ -26,6 +26,71 @@
 
 namespace {
 
+constexpr auto kMenuTitleFile = QT_TRANSLATE_NOOP("UiTranslator", "&File");
+constexpr auto kMenuTitleEdit = QT_TRANSLATE_NOOP("UiTranslator", "&Edit");
+constexpr auto kMenuTitleView = QT_TRANSLATE_NOOP("UiTranslator", "&View");
+constexpr auto kMenuTitleSettings = QT_TRANSLATE_NOOP("UiTranslator", "&Settings");
+constexpr auto kMenuTitlePlugins = QT_TRANSLATE_NOOP("UiTranslator", "&Plugins");
+constexpr auto kMenuTitleDevelopment = QT_TRANSLATE_NOOP("UiTranslator", "&Development");
+constexpr auto kMenuTitleTests = QT_TRANSLATE_NOOP("UiTranslator", "&Tests");
+constexpr auto kMenuTitleInterfaceLanguage =
+    QT_TRANSLATE_NOOP("UiTranslator", "Interface &language");
+constexpr auto kMenuTitleCategoryLanguage =
+    QT_TRANSLATE_NOOP("UiTranslator", "Category &language");
+constexpr auto kActionQuit = QT_TRANSLATE_NOOP("UiTranslator", "&Quit");
+constexpr auto kActionSystemCompatibilityCheck =
+    QT_TRANSLATE_NOOP("UiTranslator", "System compatibility check…");
+constexpr auto kActionCopy = QT_TRANSLATE_NOOP("UiTranslator", "&Copy");
+constexpr auto kActionCut = QT_TRANSLATE_NOOP("UiTranslator", "Cu&t");
+constexpr auto kActionUndoLastRun = QT_TRANSLATE_NOOP("UiTranslator", "Undo last run");
+constexpr auto kActionPaste = QT_TRANSLATE_NOOP("UiTranslator", "&Paste");
+constexpr auto kActionDelete = QT_TRANSLATE_NOOP("UiTranslator", "&Delete");
+constexpr auto kActionFileExplorer = QT_TRANSLATE_NOOP("UiTranslator", "File &Explorer");
+constexpr auto kActionSelectLlm = QT_TRANSLATE_NOOP("UiTranslator", "Select &LLM…");
+constexpr auto kActionManageStoragePlugins =
+    QT_TRANSLATE_NOOP("UiTranslator", "Manage storage plugins…");
+constexpr auto kActionManageCategoryWhitelists =
+    QT_TRANSLATE_NOOP("UiTranslator", "Manage category whitelists…");
+constexpr auto kActionResetLearnedBehavior =
+    QT_TRANSLATE_NOOP("UiTranslator", "Reset learned behavior…");
+constexpr auto kActionClearCache = QT_TRANSLATE_NOOP("UiTranslator", "Clear cache…");
+constexpr auto kActionPromptLogging =
+    QT_TRANSLATE_NOOP("UiTranslator", "Log prompts and responses to stdout");
+constexpr auto kActionRunLargeWhitelistLlmTest =
+    QT_TRANSLATE_NOOP("UiTranslator", "Run large whitelist LLM test…");
+constexpr auto kActionRunConsistencyPass =
+    QT_TRANSLATE_NOOP("UiTranslator", "Run &consistency pass");
+constexpr auto kActionEnglish = QT_TRANSLATE_NOOP("UiTranslator", "&English");
+constexpr auto kActionDutch = QT_TRANSLATE_NOOP("UiTranslator", "&Dutch");
+constexpr auto kActionFrench = QT_TRANSLATE_NOOP("UiTranslator", "&French");
+constexpr auto kActionGerman = QT_TRANSLATE_NOOP("UiTranslator", "&German");
+constexpr auto kActionHindi = QT_TRANSLATE_NOOP("UiTranslator", "&Hindi");
+constexpr auto kActionItalian = QT_TRANSLATE_NOOP("UiTranslator", "&Italian");
+constexpr auto kActionSpanish = QT_TRANSLATE_NOOP("UiTranslator", "&Spanish");
+constexpr auto kActionTurkish = QT_TRANSLATE_NOOP("UiTranslator", "&Turkish");
+constexpr auto kActionKorean = QT_TRANSLATE_NOOP("UiTranslator", "&Korean");
+constexpr auto kActionCategoryLanguageDutch = QT_TRANSLATE_NOOP("UiTranslator", "Dutch");
+constexpr auto kActionCategoryLanguageEnglish = QT_TRANSLATE_NOOP("UiTranslator", "English");
+constexpr auto kActionCategoryLanguageFrench = QT_TRANSLATE_NOOP("UiTranslator", "French");
+constexpr auto kActionCategoryLanguageGerman = QT_TRANSLATE_NOOP("UiTranslator", "German");
+constexpr auto kActionCategoryLanguageItalian = QT_TRANSLATE_NOOP("UiTranslator", "Italian");
+constexpr auto kActionCategoryLanguagePolish = QT_TRANSLATE_NOOP("UiTranslator", "Polish");
+constexpr auto kActionCategoryLanguagePortuguese =
+    QT_TRANSLATE_NOOP("UiTranslator", "Portuguese");
+constexpr auto kActionCategoryLanguageSpanish = QT_TRANSLATE_NOOP("UiTranslator", "Spanish");
+constexpr auto kActionCategoryLanguageTurkish = QT_TRANSLATE_NOOP("UiTranslator", "Turkish");
+constexpr auto kActionAboutAiFileSorter =
+    QT_TRANSLATE_NOOP("UiTranslator", "&About AI File Sorter");
+constexpr auto kActionQuickStartGuide =
+    QT_TRANSLATE_NOOP("UiTranslator", "&Quick Start Guide");
+constexpr auto kActionFaq = QT_TRANSLATE_NOOP("UiTranslator", "&FAQ");
+constexpr auto kActionAboutQt = QT_TRANSLATE_NOOP("UiTranslator", "About &Qt");
+constexpr auto kActionAboutAgpl = QT_TRANSLATE_NOOP("UiTranslator", "About &AGPL");
+constexpr auto kActionSupportProject =
+    QT_TRANSLATE_NOOP("UiTranslator", "&Support Project");
+constexpr auto kMenuTitleHelp = QT_TRANSLATE_NOOP("UiTranslator", "&Help");
+constexpr auto kDockTitleFileExplorer = QT_TRANSLATE_NOOP("UiTranslator", "File Explorer");
+
 template <typename Widget>
 Widget* raw_ptr(const QPointer<Widget>& pointer)
 {
@@ -202,16 +267,16 @@ void UiTranslator::translate_menus_and_actions() const
     };
 
     const MenuEntry menu_entries[] = {
-        {deps_.menus.file_menu, "&File"},
-        {deps_.menus.edit_menu, "&Edit"},
-        {deps_.menus.view_menu, "&View"},
-        {deps_.menus.settings_menu, "&Settings"},
-        {deps_.menus.plugins_menu, "&Plugins"},
-        {deps_.menus.development_menu, "&Development"},
-        {deps_.menus.development_settings_menu, "&Settings"},
-        {deps_.menus.test_menu, "&Tests"},
-        {deps_.menus.language_menu, "Interface &language"},
-        {deps_.menus.category_language_menu, "Category &language"}
+        {deps_.menus.file_menu, kMenuTitleFile},
+        {deps_.menus.edit_menu, kMenuTitleEdit},
+        {deps_.menus.view_menu, kMenuTitleView},
+        {deps_.menus.settings_menu, kMenuTitleSettings},
+        {deps_.menus.plugins_menu, kMenuTitlePlugins},
+        {deps_.menus.development_menu, kMenuTitleDevelopment},
+        {deps_.menus.development_settings_menu, kMenuTitleSettings},
+        {deps_.menus.test_menu, kMenuTitleTests},
+        {deps_.menus.language_menu, kMenuTitleInterfaceLanguage},
+        {deps_.menus.category_language_menu, kMenuTitleCategoryLanguage}
     };
 
     for (const MenuEntry& entry : menu_entries) {
@@ -226,45 +291,46 @@ void UiTranslator::translate_menus_and_actions() const
     };
 
     const ActionEntry action_entries[] = {
-        {deps_.actions.file_quit_action, "&Quit"},
-        {deps_.actions.run_benchmark_action, "System compatibility check…"},
-        {deps_.actions.copy_action, "&Copy"},
-        {deps_.actions.cut_action, "Cu&t"},
-        {deps_.actions.undo_last_run_action, "Undo last run"},
-        {deps_.actions.paste_action, "&Paste"},
-        {deps_.actions.delete_action, "&Delete"},
-        {deps_.actions.toggle_explorer_action, "File &Explorer"},
-        {deps_.actions.toggle_llm_action, "Select &LLM…"},
-        {deps_.actions.manage_storage_plugins_action, "Manage storage plugins…"},
-        {deps_.actions.manage_whitelists_action, "Manage category whitelists…"},
-        {deps_.actions.reset_learning_action, "Reset learned behavior…"},
-        {deps_.actions.clear_cache_action, "Clear cache…"},
-        {deps_.actions.development_prompt_logging_action, "Log prompts and responses to stdout"},
-        {deps_.actions.run_large_whitelist_llm_test_action, "Run large whitelist LLM test…"},
-        {deps_.actions.consistency_pass_action, "Run &consistency pass"},
-        {deps_.actions.english_action, "&English"},
-        {deps_.actions.dutch_action, "&Dutch"},
-        {deps_.actions.french_action, "&French"},
-        {deps_.actions.german_action, "&German"},
-        {deps_.actions.italian_action, "&Italian"},
-        {deps_.actions.spanish_action, "&Spanish"},
-        {deps_.actions.turkish_action, "&Turkish"},
-        {deps_.actions.korean_action, "&Korean"},
-        {deps_.actions.category_language_dutch, "Dutch"},
-        {deps_.actions.category_language_english, "English"},
-        {deps_.actions.category_language_french, "French"},
-        {deps_.actions.category_language_german, "German"},
-        {deps_.actions.category_language_italian, "Italian"},
-        {deps_.actions.category_language_polish, "Polish"},
-        {deps_.actions.category_language_portuguese, "Portuguese"},
-        {deps_.actions.category_language_spanish, "Spanish"},
-        {deps_.actions.category_language_turkish, "Turkish"},
-        {deps_.actions.about_action, "&About AI File Sorter"},
-        {deps_.actions.quick_start_action, "&Quick Start Guide"},
-        {deps_.actions.faq_action, "&FAQ"},
-        {deps_.actions.about_qt_action, "About &Qt"},
-        {deps_.actions.about_agpl_action, "About &AGPL"},
-        {deps_.actions.support_project_action, "&Support Project"}
+        {deps_.actions.file_quit_action, kActionQuit},
+        {deps_.actions.run_benchmark_action, kActionSystemCompatibilityCheck},
+        {deps_.actions.copy_action, kActionCopy},
+        {deps_.actions.cut_action, kActionCut},
+        {deps_.actions.undo_last_run_action, kActionUndoLastRun},
+        {deps_.actions.paste_action, kActionPaste},
+        {deps_.actions.delete_action, kActionDelete},
+        {deps_.actions.toggle_explorer_action, kActionFileExplorer},
+        {deps_.actions.toggle_llm_action, kActionSelectLlm},
+        {deps_.actions.manage_storage_plugins_action, kActionManageStoragePlugins},
+        {deps_.actions.manage_whitelists_action, kActionManageCategoryWhitelists},
+        {deps_.actions.reset_learning_action, kActionResetLearnedBehavior},
+        {deps_.actions.clear_cache_action, kActionClearCache},
+        {deps_.actions.development_prompt_logging_action, kActionPromptLogging},
+        {deps_.actions.run_large_whitelist_llm_test_action, kActionRunLargeWhitelistLlmTest},
+        {deps_.actions.consistency_pass_action, kActionRunConsistencyPass},
+        {deps_.actions.english_action, kActionEnglish},
+        {deps_.actions.dutch_action, kActionDutch},
+        {deps_.actions.french_action, kActionFrench},
+        {deps_.actions.german_action, kActionGerman},
+        {deps_.actions.hindi_action, kActionHindi},
+        {deps_.actions.italian_action, kActionItalian},
+        {deps_.actions.spanish_action, kActionSpanish},
+        {deps_.actions.turkish_action, kActionTurkish},
+        {deps_.actions.korean_action, kActionKorean},
+        {deps_.actions.category_language_dutch, kActionCategoryLanguageDutch},
+        {deps_.actions.category_language_english, kActionCategoryLanguageEnglish},
+        {deps_.actions.category_language_french, kActionCategoryLanguageFrench},
+        {deps_.actions.category_language_german, kActionCategoryLanguageGerman},
+        {deps_.actions.category_language_italian, kActionCategoryLanguageItalian},
+        {deps_.actions.category_language_polish, kActionCategoryLanguagePolish},
+        {deps_.actions.category_language_portuguese, kActionCategoryLanguagePortuguese},
+        {deps_.actions.category_language_spanish, kActionCategoryLanguageSpanish},
+        {deps_.actions.category_language_turkish, kActionCategoryLanguageTurkish},
+        {deps_.actions.about_action, kActionAboutAiFileSorter},
+        {deps_.actions.quick_start_action, kActionQuickStartGuide},
+        {deps_.actions.faq_action, kActionFaq},
+        {deps_.actions.about_qt_action, kActionAboutQt},
+        {deps_.actions.about_agpl_action, kActionAboutAgpl},
+        {deps_.actions.support_project_action, kActionSupportProject}
     };
 
     for (const ActionEntry& entry : action_entries) {
@@ -274,7 +340,7 @@ void UiTranslator::translate_menus_and_actions() const
     }
 
     if (auto* menu = deps_.menus.help_menu) {
-        const QString help_title = QString(QChar(0x200B)) + tr("&Help");
+        const QString help_title = QString(QChar(0x200B)) + tr(kMenuTitleHelp);
         menu->setTitle(help_title);
         if (QAction* help_action = menu->menuAction()) {
             help_action->setText(help_title);
@@ -282,7 +348,7 @@ void UiTranslator::translate_menus_and_actions() const
     }
 
     if (auto* dock = raw_ptr(deps_.file_explorer_dock)) {
-        dock->setWindowTitle(tr("File Explorer"));
+        dock->setWindowTitle(tr(kDockTitleFileExplorer));
     }
 }
 
@@ -330,6 +396,9 @@ void UiTranslator::update_language_group_checks(Language configured) const
     }
     if (deps_.language.german_action) {
         deps_.language.german_action->setChecked(configured == Language::German);
+    }
+    if (deps_.language.hindi_action) {
+        deps_.language.hindi_action->setChecked(configured == Language::Hindi);
     }
     if (deps_.language.italian_action) {
         deps_.language.italian_action->setChecked(configured == Language::Italian);

@@ -421,6 +421,7 @@ private:
     QAction* dutch_action{nullptr};
     QAction* french_action{nullptr};
     QAction* german_action{nullptr};
+    QAction* hindi_action{nullptr};
     QAction* italian_action{nullptr};
     QAction* spanish_action{nullptr};
     QAction* turkish_action{nullptr};

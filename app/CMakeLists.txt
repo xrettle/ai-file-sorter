@@ -492,6 +492,7 @@ set(APP_SOURCES ${APP_MAIN_SOURCE} ${APP_LIB_SOURCES})
 set(AIFS_TRANSLATION_TS_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/i18n/aifilesorter_fr.ts"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/i18n/aifilesorter_de.ts"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/i18n/aifilesorter_hi.ts"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/i18n/aifilesorter_it.ts"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/i18n/aifilesorter_es.ts"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/i18n/aifilesorter_nl.ts"
@@ -559,6 +560,7 @@ set(APP_RESOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_nl.md"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_fr.md"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_de.md"
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_hi.md"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_it.md"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_es.md"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_tr.md"
@@ -601,6 +603,10 @@ set_source_files_properties(
 set_source_files_properties(
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_de.md"
     PROPERTIES QT_RESOURCE_ALIAS "help/quick_start_de.md"
+)
+set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_hi.md"
+    PROPERTIES QT_RESOURCE_ALIAS "help/quick_start_hi.md"
 )
 set_source_files_properties(
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/help/quick_start_it.md"

@@ -105,6 +105,7 @@ public:
         QAction*& dutch_action;
         QAction*& french_action;
         QAction*& german_action;
+        QAction*& hindi_action;
         QAction*& italian_action;
         QAction*& spanish_action;
         QAction*& turkish_action;
@@ -135,6 +136,7 @@ public:
         QAction*& dutch_action;
         QAction*& french_action;
         QAction*& german_action;
+        QAction*& hindi_action;
         QAction*& italian_action;
         QAction*& spanish_action;
         QAction*& turkish_action;

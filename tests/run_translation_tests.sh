@@ -8,6 +8,7 @@ mkdir -p "$BUILD_DIR/i18n"
 TS_FILES=(
     "$ROOT_DIR/app/resources/i18n/aifilesorter_fr.ts"
     "$ROOT_DIR/app/resources/i18n/aifilesorter_de.ts"
+    "$ROOT_DIR/app/resources/i18n/aifilesorter_hi.ts"
     "$ROOT_DIR/app/resources/i18n/aifilesorter_it.ts"
     "$ROOT_DIR/app/resources/i18n/aifilesorter_es.ts"
     "$ROOT_DIR/app/resources/i18n/aifilesorter_nl.ts"

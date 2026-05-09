@@ -46,6 +46,8 @@ QString quick_start_resource_path(Language language)
         return QStringLiteral(":/net/quicknode/AIFileSorter/help/quick_start_fr.md");
     case Language::German:
         return QStringLiteral(":/net/quicknode/AIFileSorter/help/quick_start_de.md");
+    case Language::Hindi:
+        return QStringLiteral(":/net/quicknode/AIFileSorter/help/quick_start_hi.md");
     case Language::Italian:
         return QStringLiteral(":/net/quicknode/AIFileSorter/help/quick_start_it.md");
     case Language::Spanish:

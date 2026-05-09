@@ -388,6 +388,7 @@ TS_DIR := resources/i18n
 TS_FILES := \
 	$(TS_DIR)/aifilesorter_fr.ts \
 	$(TS_DIR)/aifilesorter_de.ts \
+	$(TS_DIR)/aifilesorter_hi.ts \
 	$(TS_DIR)/aifilesorter_it.ts \
 	$(TS_DIR)/aifilesorter_es.ts \
 	$(TS_DIR)/aifilesorter_nl.ts \
