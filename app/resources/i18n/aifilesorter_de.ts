@@ -518,8 +518,10 @@
     <message>
         <location filename="../../lib/LLMSelectionDialog.cpp" line="251"/>
         <source>Balanced local model for categorization with lower hardware requirements than 7B models.
+Supports many languages for categorization.
 Supports: Nvidia (CUDA), Apple (Metal), CPU.</source>
         <translation>Ausgewogenes lokales Modell für die Kategorisierung mit geringeren Hardware-Anforderungen als 7B-Modelle.
+Unterstützt viele Sprachen für die Kategorisierung.
 Unterstützt: Nvidia (CUDA), Apple (Metal), CPU.</translation>
     </message>
     <message>

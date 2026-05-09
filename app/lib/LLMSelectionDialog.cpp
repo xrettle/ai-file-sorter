@@ -248,7 +248,7 @@ void LLMSelectionDialog::setup_ui()
     local3_radio = new QRadioButton(default_llm_label_for_choice(LLMChoice::Local_4b_Gemma), radio_container);
     local3_radio->setStyleSheet(QStringLiteral("color: #1f6feb;"));
     auto* local3_desc = new QLabel(
-        tr("Balanced local model for categorization with lower hardware requirements than 7B models.\nSupports: Nvidia (CUDA), Apple (Metal), CPU."),
+        tr("Balanced local model for categorization with lower hardware requirements than 7B models.\nSupports many languages for categorization.\nSupports: Nvidia (CUDA), Apple (Metal), CPU."),
         radio_container);
     local3_desc->setWordWrap(true);
 
