@@ -36,7 +36,7 @@ Instead of relying only on fixed rules, the app combines LLM output with taxonom
 Categories (and optional subcategories) are suggested for each file, and for supported file types, rename suggestions are provided as well. Once you confirm, the required folders are created automatically and files are sorted accordingly.
 
 Privacy-first by design:
-AI File Sorter can run entirely on your device, using local text and visual models such as Gemma 3 4B IT and other supported GGUF backends. No files, filenames, images, or metadata are uploaded anywhere, and no telemetry is sent. An internet connection is only needed if you explicitly choose to enable a remote model.
+AI File Sorter can run entirely on your device, using local text and visual models such as Gemma 3 4B IT and other supported GGUF backends. The same Gemma 3 4B IT GGUF can be used on its own as a local text model, while visual image analysis additionally requires a matching `mmproj` file. No files, filenames, images, or metadata are uploaded anywhere, and no telemetry is sent. An internet connection is only needed if you explicitly choose to enable a remote model.
 
 ---
 
@@ -45,7 +45,7 @@ AI File Sorter can run entirely on your device, using local text and visual mode
 1. Point the app at a folder or drive  
 2. Files (and image content, when applicable) are analyzed using the selected local or remote model  
 3. Category and rename suggestions are generated  
-4. You review and adjust if needed - done  
+4. You review and adjust if needed before anything is changed  
 
 ---
 
@@ -81,6 +81,7 @@ AI File Sorter can run entirely on your device, using local text and visual mode
   - [Uninstallation](#uninstallation)
   - [Using your OpenAI API key](#using-your-openai-api-key)
   - [Using your Gemini API key](#using-your-gemini-api-key)
+  - [Using a custom OpenAI-compatible API](#using-a-custom-openai-compatible-api)
   - [Testing](#testing)
   - [Diagnostics](#diagnostics)
   - [Help and onboarding](#help-and-onboarding)
@@ -95,16 +96,19 @@ AI File Sorter can run entirely on your device, using local text and visual mode
 
 ## Changelog
 
-## [1.8.0] - 2026-04-23
+## [1.8.0] - 2026-05-09
 
-- Shows the active AI backend in the status bar.
-- Improves launcher, GPU, and local model handling for better reliability.
-- Uses Gemma 3 4B IT as the default visual model.
-- Improves image categorization quality and category consistency, including for screenshots and UI captures.
-- Makes image analysis more stable.
-- Lets you clear categorization and app caches from Settings.
-- Learns locally from your approved review decisions to improve future suggestions.
-- Includes localized Quick Start help and an FAQ link.
+- Added backend status indicator to the status bar.
+- The app now runs as a single instance - opening it again brings the existing window to the front instead of starting a second copy.
+- Restored the app launcher for the non-Microsoft Store versions of the app and improved GPU selection, now preferring CUDA over Vulkan when both are available.
+- Improved local GPU startup and local visual model handling for better reliability and compatibility.
+- Added Gemma 3 4B IT and set it as the default visual model.
+- Added Gemma 3 4B IT and Gemma 1.1 7B as built-in local categorization model choices, replacing LLaMa 3B.
+- Improved image categorization quality and consistency by preserving image descriptions, using richer prompt context, adding special handling for screenshots and UI captures, and reducing drift equivalent between  category labels.
+- Improved image analysis stability, fallback behavior, and model-download validation.
+- Added options to clear categorization and app caches, including a deeper reset of stored categorization state.
+- Added local learning from your review decisions to improve future suggestions.
+- Added localized Quick Start help, an FAQ link, and Hindi interface support.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
@@ -112,21 +116,21 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 ## Features
 
-- **AI-Powered Categorization**: Classify files intelligently using either a **local LLM** (Gemma, Mistral, or your own GGUF) or a remote model (ChatGPT with your own OpenAI API key, or Gemini with your own Gemini API key).
+- **AI-Powered Categorization**: Classify files intelligently using either a **local LLM** (built-in Gemma 3 4B IT, Mistral 7B, Gemma 1.1 7B, legacy LLaMa 3B compatibility, or your own GGUF) or a remote model (ChatGPT with your own OpenAI API key, Gemini with your own Gemini API key, or a custom OpenAI-compatible API endpoint).
 - **Offline-Friendly**: Use a local LLM to categorize files entirely - no internet or API key required.
 - **Robust categorization**: Taxonomy and heuristics help keep labels more consistent across runs.
-- **Customizable sorting rules**: Automatically assign categories and subcategories for granular organization.
+- **Configurable categorization controls**: Use whitelists, taxonomy normalization, consistency modes, and review-time edits to steer categories and subcategories.
 - **Two categorization modes**: Pick **More Refined** for detailed labels or **More Consistent** to bias toward uniform categories within a folder.
 - **Category whitelists**: Define named whitelists of allowed categories/subcategories, manage them under **Settings → Manage category whitelists…**, and toggle/select them in the main window when you want to constrain model output for a session.
 - **Multilingual categorization**: Have the LLM assign categories in Dutch, French, German, Italian, Polish, Portuguese, Spanish, or Turkish (model dependent).
 - **Custom local LLMs**: Register your own local GGUF models directly from the **Select LLM** dialog.
-- **Image content analysis (Visual LLM)**: Analyze supported picture files with built-in visual backends such as the default Gemma 3 4B IT, with special handling for screenshots and UI captures so categories describe on-screen content more accurately (rename-only mode supported).
+- **Image content analysis (Visual LLM)**: Analyze supported picture files with built-in visual backends such as the default Gemma 3 4B IT and LLaVA 1.6 Mistral 7B, with special handling for screenshots and UI captures so categories describe on-screen content more accurately (rename-only mode supported).
 - **Image date-to-category suffix (optional)**: Append image creation date metadata to image category names when available.
 - **Document content analysis (Text LLM)**: Analyze supported document files to summarize content and suggest filenames; uses the same selected LLM (local or remote).
 - **Audio/video metadata filename suggestions**: Turn embedded media tags into clean, library-style filenames for supported audio and video files, with full review before anything is renamed.
 - **Sortable review**: Sort the Categorization Review table by file name, category, or subcategory to triage faster.
 - **Qt6 Interface**: Lightweight and responsive UI with refreshed menus and icons.
-- **Interface languages**: English, Dutch, French, German, Italian, Korean, Spanish, and Turkish.
+- **Interface languages**: English, Dutch, French, German, Hindi, Italian, Korean, Spanish, and Turkish.
 - **Cross-Platform Compatibility**: Works on Windows, macOS, and Linux.
 - **Local Database Caching**: Speeds up repeated categorization, preserves approved labels and rename suggestions, and provides recent-category hints for consistency.
 - **Local learning from approved reviews**: Approved category decisions can be stored locally and reused as hints for future runs without modifying the underlying model.
@@ -134,10 +138,9 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 - **Sorting Preview**: See how files will be organized before confirming changes.
 - **Dry run** / preview-only mode to inspect planned moves without touching files.
 - **Persistent Undo** ("Undo last run") even after closing the sort dialog.
-- **Bring your own key**: Paste your OpenAI or Gemini API key once; it's stored locally and reused for remote runs.
+- **Bring your own remote credentials**: Store your OpenAI key, Gemini key, or custom OpenAI-compatible endpoint details locally for reuse in later runs.
 - **Update Notifications**: Get notified about updates - with optional or required update flows.
 - **Storage plugin support**: Install provider-specific compatibility modes from the **Plugins** menu when the app detects supported cloud-backed folders.
-- **Dedicated OneDrive support**: Use the OneDrive plugin for stronger sync-aware handling than plain local-folder mode.
 - **In-app help**: Open the localized **Help → Quick Start Guide** for a guided walkthrough or **Help → FAQ** for troubleshooting and common questions.
 
 ---
@@ -165,7 +168,9 @@ Image analysis uses local MTMD-backed visual LLM backends to describe image cont
 
 As of 1.8.0, **Gemma 3 4B IT** is the default visual backend. The app also gives screenshots, webpage captures, dashboards, forms, mockups, and other UI-like images extra prompt guidance so categories describe what is shown on screen instead of misclassifying the image as the software artifact itself.
 
-The app currently exposes multiple built-in visual backends, including the default Gemma 3 4B IT and LLaVA 1.6. In the current embedded runtime, all supported local visual backends still require two GGUF files: the main text model and a matching `mmproj` projector file.
+The app currently exposes two built-in visual backends: the default Gemma 3 4B IT and LLaVA 1.6 Mistral 7B. In the current embedded runtime, all supported local visual backends require two GGUF files: the main text model and a matching `mmproj` projector file.
+
+The Gemma 3 4B IT GGUF is also available as a built-in local text/categorization model. When used only for categorization or document analysis, it runs as a normal text model and does not need `mmproj`. The extra `mmproj` file is only required for visual image analysis.
 
 ### Required visual LLM files
 
@@ -258,13 +263,13 @@ Tip: quit CPU/GPU‑intensive apps before running the check for more accurate re
 - **Document analysis libraries** (vendored): PDFium, libzip, and pugixml. PDFium is required by default so packaged/source builds keep PDF extraction embedded on Windows, macOS, and Linux; set `-DAI_FILE_SORTER_REQUIRE_EMBEDDED_PDF_BACKEND=OFF` only if you intentionally want the `pdftotext` fallback.
 - **Optional GPU backends**: CUDA 12.x for NVIDIA cards or a Vulkan 1.2+ runtime. On Windows installer/standalone builds, `aifilesorter.exe` auto-detects the best available backend and now prefers CUDA over Vulkan when both are available, falling back to CPU/OpenBLAS automatically. On Linux, the same applies through `run_aifilesorter.sh`, so CUDA is never required to run the app.
 - **Git** (optional): For cloning this repository. Archives can also be downloaded.
-- **OpenAI or Gemini API key** (optional): Required only when using the remote ChatGPT or Gemini workflow.
+- **Remote model credentials** (optional): Required only when using ChatGPT, Gemini, or a custom OpenAI-compatible API endpoint.
 
 ---
 
 ## Installation
 
-File categorization with local LLMs is completely free of charge. If you prefer to use a remote workflow (ChatGPT or Gemini) you will need your own API key with a small balance or within the free tier (see [Using your OpenAI API key](#using-your-openai-api-key) or [Using your Gemini API key](#using-your-gemini-api-key)).
+File categorization with local LLMs is completely free of charge. If you prefer to use a remote workflow (ChatGPT, Gemini, or a custom OpenAI-compatible endpoint) you will need your own API credentials or endpoint configuration with a suitable quota or local server setup (see [Using your OpenAI API key](#using-your-openai-api-key), [Using your Gemini API key](#using-your-gemini-api-key), or [Using a custom OpenAI-compatible API](#using-a-custom-openai-compatible-api)).
 
 ### Linux
 
@@ -893,6 +898,20 @@ Prefer Google's models? Use your own Gemini API key:
 
 > AI Studio keys can be used on the free tier until you hit Google’s limits; higher quotas or enterprise use require billing via Google Cloud.
 > The app calls the Gemini `v1` `generateContent` endpoint; use model IDs from `https://generativelanguage.googleapis.com/v1/models?key=YOUR_KEY`. You can enter them with or without the leading `models/` prefix.
+
+---
+
+## Using a custom OpenAI-compatible API
+
+Prefer an OpenAI-compatible endpoint such as **LM Studio**, **Ollama**, or your own hosted gateway? AI File Sorter can use that too:
+
+1. Open **Settings -> Select LLM** in the app.
+2. Choose **Custom OpenAI-compatible API (advanced)**.
+3. Click **Add…**, then enter a friendly name, the endpoint base URL, the model name to use, and an API key if your endpoint requires one.
+4. Save the endpoint, select it from the list, and click **OK**.
+5. The endpoint configuration is stored locally in your AI File Sorter config and can be edited or removed later from the same dialog.
+
+Use this option for local servers or remote providers that follow the OpenAI-style API shape. Response time can be tuned with `AI_FILE_SORTER_CUSTOM_LLM_TIMEOUT` (see [Environment variables](#environment-variables)).
 
 ---
 

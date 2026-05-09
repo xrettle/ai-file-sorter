@@ -5,13 +5,14 @@
 - Added backend status indicator to the status bar.
 - The app now runs as a single instance - opening it again brings the existing window to the front instead of starting a second copy.
 - Restored the app launcher for the non-Microsoft Store versions of the app and improved GPU selection, now preferring CUDA over Vulkan when both are available.
-- Reworked local visual model handling for better reliability and compatibility.
-- Adde Gemma 3 4B IT and set it as the default visual model.
-- Improved image categorization quality and consistency by preserving image descriptions, using richer prompt context, adding special handling for screenshots and UI captures, and reducing drift between equivalent category labels.
-- Improved image analysis stability and made errors easier to understand.
-- Added options to clear categorization and app caches.
+- Improved local GPU startup and local visual model handling for better reliability and compatibility.
+- Added Gemma 3 4B IT and set it as the default visual model.
+- Added Gemma 3 4B IT and Gemma 1.1 7B as built-in local categorization model choices, replacing LLaMa 3B.
+- Improved image categorization quality and consistency by preserving image descriptions, using richer prompt context, adding special handling for screenshots and UI captures, and reducing drift equivalent between  category labels.
+- Improved image analysis stability, fallback behavior, and model-download validation.
+- Added options to clear categorization and app caches, including a deeper reset of stored categorization state.
 - Added local learning from your review decisions to improve future suggestions.
-- Added localized Quick Start help and an FAQ link.
+- Added localized Quick Start help, an FAQ link, and Hindi interface support.
 
 ## [1.7.3] - 2026-03-22
 
