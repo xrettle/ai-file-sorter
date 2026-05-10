@@ -12,7 +12,9 @@
 - Improved image analysis stability, fallback behavior, and model-download validation.
 - Added options to clear categorization and app caches, including a deeper reset of stored categorization state.
 - Added local learning from your review decisions to improve future suggestions.
-- Added localized Quick Start help, an FAQ link, and Hindi interface support.
+- Added localized Quick Start help, an FAQ link, and additional interface languages including Hindi, Swedish, Icelandic, Norwegian, Finnish, Danish, and Simplified Chinese.
+- Expanded category-language support and made the **Settings → Category language** menu model-aware: Gemma 3 4B and custom local models expose the full app-supported list, while smaller built-in local models now show only their supported languages.
+- Local Gemma 3 4B text categorization now reuses the already-downloaded visual Gemma 3 text model when applicable.
 
 ## [1.7.3] - 2026-03-22
 

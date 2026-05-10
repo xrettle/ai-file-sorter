@@ -108,7 +108,7 @@ AI File Sorter can run entirely on your device, using local text and visual mode
 - Improved image analysis stability, fallback behavior, and model-download validation.
 - Added options to clear categorization and app caches, including a deeper reset of stored categorization state.
 - Added local learning from your review decisions to improve future suggestions.
-- Added localized Quick Start help, an FAQ link, and Hindi interface support.
+- Added localized Quick Start help, an FAQ link, and additional interface languages including Hindi, Swedish, Icelandic, Norwegian, Finnish, Danish, and Simplified Chinese.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
@@ -116,13 +116,13 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
 ## Features
 
-- **AI-Powered Categorization**: Classify files intelligently using either a **local LLM** (built-in Gemma 3 4B IT, Mistral 7B, Gemma 1.1 7B, legacy LLaMa 3B compatibility, or your own GGUF) or a remote model (ChatGPT with your own OpenAI API key, Gemini with your own Gemini API key, or a custom OpenAI-compatible API endpoint).
+- **AI-Powered Categorization**: Classify files intelligently using either a **local LLM** (built-in Gemma 3 4B IT, Mistral 7B, Gemma 1.1 7B, or your own GGUF) or a remote model (ChatGPT with your own OpenAI API key, Gemini with your own Gemini API key, or a custom OpenAI-compatible API endpoint).
 - **Offline-Friendly**: Use a local LLM to categorize files entirely - no internet or API key required.
 - **Robust categorization**: Taxonomy and heuristics help keep labels more consistent across runs.
 - **Configurable categorization controls**: Use whitelists, taxonomy normalization, consistency modes, and review-time edits to steer categories and subcategories.
 - **Two categorization modes**: Pick **More Refined** for detailed labels or **More Consistent** to bias toward uniform categories within a folder.
 - **Category whitelists**: Define named whitelists of allowed categories/subcategories, manage them under **Settings → Manage category whitelists…**, and toggle/select them in the main window when you want to constrain model output for a session.
-- **Multilingual categorization**: Have the LLM assign categories in Dutch, French, German, Italian, Polish, Portuguese, Spanish, or Turkish (model dependent).
+- **Model-aware category languages**: Categorization stays canonical in English first and then translates labels into the selected category language. The available languages depend on the selected local model; Gemma 3 4B and custom local models expose the full app-supported list, while smaller built-in models expose only their supported subset.
 - **Custom local LLMs**: Register your own local GGUF models directly from the **Select LLM** dialog.
 - **Image content analysis (Visual LLM)**: Analyze supported picture files with built-in visual backends such as the default Gemma 3 4B IT and LLaVA 1.6 Mistral 7B, with special handling for screenshots and UI captures so categories describe on-screen content more accurately (rename-only mode supported).
 - **Image date-to-category suffix (optional)**: Append image creation date metadata to image category names when available.
@@ -130,7 +130,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 - **Audio/video metadata filename suggestions**: Turn embedded media tags into clean, library-style filenames for supported audio and video files, with full review before anything is renamed.
 - **Sortable review**: Sort the Categorization Review table by file name, category, or subcategory to triage faster.
 - **Qt6 Interface**: Lightweight and responsive UI with refreshed menus and icons.
-- **Interface languages**: English, Dutch, French, German, Hindi, Italian, Korean, Spanish, and Turkish.
+- **Interface languages**: English, Danish, Dutch, Finnish, French, German, Hindi, Icelandic, Italian, Korean, Norwegian, Simplified Chinese, Spanish, Swedish, and Turkish.
 - **Cross-Platform Compatibility**: Works on Windows, macOS, and Linux.
 - **Local Database Caching**: Speeds up repeated categorization, preserves approved labels and rename suggestions, and provides recent-category hints for consistency.
 - **Local learning from approved reviews**: Approved category decisions can be stored locally and reused as hints for future runs without modifying the underlying model.
@@ -153,6 +153,12 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 - **More consistent**: The uniform mode. The model receives consistency hints from prior assignments in the current session so files with similar names/extensions trend toward the same categories. This is helpful when you want strict uniformity across a batch.
 - Switch between the two via the **Categorization type** radio buttons on the main window; your choice is saved for the next run.
 
+### Category language selection
+
+- Category labels are generated canonically in English first and then translated into the selected **Settings → Category language** target.
+- The list is model-dependent for built-in local models. **Gemma 3 4B IT** and **Custom** local models expose the full app-supported category-language list, **Mistral 7B** exposes a smaller supported subset, and **Gemma 1.1 7B** stays English-only.
+- When the supported list is long, the menu is grouped into alphabetical submenus to keep it usable on smaller screens.
+
 ### Category whitelists
 
 - Enable **Use a whitelist** to inject the selected whitelist into the LLM prompt; disable it to let the model choose freely.
@@ -170,7 +176,7 @@ As of 1.8.0, **Gemma 3 4B IT** is the default visual backend. The app also gives
 
 The app currently exposes two built-in visual backends: the default Gemma 3 4B IT and LLaVA 1.6 Mistral 7B. In the current embedded runtime, all supported local visual backends require two GGUF files: the main text model and a matching `mmproj` projector file.
 
-The Gemma 3 4B IT GGUF is also available as a built-in local text/categorization model. When used only for categorization or document analysis, it runs as a normal text model and does not need `mmproj`. The extra `mmproj` file is only required for visual image analysis.
+The Gemma 3 4B IT GGUF is also available as a built-in local text/categorization model. When used only for categorization or document analysis, it runs as a normal text model and does not need `mmproj`. If you already downloaded the Gemma 3 text GGUF for image analysis, the local text-model entry reuses that same file automatically. The extra `mmproj` file is only required for visual image analysis.
 
 ### Required visual LLM files
 
@@ -547,7 +553,7 @@ Option A - CMake + vcpkg (recommended)
    app\scripts\build_llama_windows.ps1 cuda=off vulkan=on
    ```
   
-  Each run emits the appropriate `llama.dll` / `ggml*.dll` pair under `app\lib\precompiled\<cpu|cuda|vulkan>` and copies the runtime DLLs into `app\lib\ggml\w<variant>`. For Vulkan builds, install the latest LunarG Vulkan SDK (or the vendor's runtime), ensure `vulkaninfo` succeeds in the same shell, and then run the script. Supplying both Vulkan and (optionally) CUDA artifacts lets the non-MSIX Windows launcher `aifilesorter.exe` detect the best backend at launch—CUDA is preferred, Vulkan is used when CUDA is unavailable, and CPU remains the fallback, so CUDA is not required.
+  Each run emits the appropriate `llama.dll` / `ggml*.dll` pair under `app\lib\precompiled\<cpu|cuda|vulkan|vulkan-blas>` and copies the runtime DLLs into the Windows runtime directories used by the app (`app\lib\ggml\wocuda`, `app\lib\ggml\wcuda`, or `app\lib\ggml\wvulkan`). For Vulkan builds, install the latest LunarG Vulkan SDK (or the vendor's runtime), ensure `vulkaninfo` succeeds in the same shell, and then run the script. The final Windows build prefers the `vulkan-blas` payload when it is available, while the non-MSIX launcher `aifilesorter.exe` still auto-selects the best backend at launch: CUDA is preferred, Vulkan is used when CUDA is unavailable, and CPU remains the fallback.
 
 6. Build the Qt6 application using the helper script (still in the VS shell). The helper stages runtime DLLs via `windeployqt`, shares one dependency install tree across variants, and by default produces three Windows builds in one run:
 
@@ -564,7 +570,7 @@ Option A - CMake + vcpkg (recommended)
      - Microsoft Store build with update checks disabled: `app\build-windows-store\Release`
      - Standalone Windows build with notification-only/manual updates: `app\build-windows-standalone\Release`
    - Use `-Variants Standard`, `-Variants MsStore`, or `-Variants Standalone` to build only a subset.
-   - `aifilesorter.exe` is the Windows entry point in every variant. In `Standard` and `Standalone`, it is the bootstrapper and launches `aifilesorter-bin.exe`; in `MsStore`, it remains the main application executable directly.
+   - `aifilesorter.exe` is the Windows entry point in every variant. In `Standard` and `Standalone`, it is the bootstrapper and launches `aifilesorter-bin.exe`; in `MsStore`, it remains the main application executable directly, so the staged ggml/backend DLLs live beside it in the packaged app directory rather than under a launcher-managed runtime subtree.
    - `-VcpkgRoot` is optional if `VCPKG_ROOT`/`VPKG_ROOT` is set or `vcpkg`/`vpkg` is on `PATH`.
    - Each variant directory receives its own executable and staged Qt/third-party DLLs. Pass `-SkipDeploy` if you only want the binaries without bundling runtime DLLs.
    - Pass `-Parallel <N>` to override the default “all cores” parallel build behaviour (for example, `-Parallel 8`). By default the script invokes `cmake --build ... --parallel <core-count>` and `ctest -j <core-count>` to keep both MSBuild and Ninja fully utilized.
@@ -940,6 +946,8 @@ If you need to report a bug or collect troubleshooting data, use the bundled dia
 
 Each script collects relevant logs, redacts common sensitive paths, and packages the result into a zip archive for sharing. See [app/scripts/README.md](app/scripts/README.md) for options such as time filtering and opening the output folder automatically.
 
+For log locations, rotation details, and common troubleshooting notes, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
 ---
 
 ## Help and onboarding
@@ -947,6 +955,8 @@ Each script collects relevant logs, redacts common sensitive paths, and packages
 If you want an in-app walkthrough before your first run, open **Help → Quick Start Guide**. The Quick Start guide is localized and covers the review flow, undo, local learning, and the most common settings you may want to change.
 
 If something looks wrong or you want troubleshooting tips, open **Help → FAQ**.
+
+For log locations, rotation details, and other troubleshooting notes outside the app, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ---
 
