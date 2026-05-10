@@ -2698,7 +2698,7 @@ Vinsamlegast uppfærðu til að halda áfram. Ef þú velur að hætta mun forri
 
             <source>&amp;Simplified Chinese</source>
 
-            <translation>&amp;Einfölduð kínverska</translation>
+            <translation>&amp;einfölduð kínverska</translation>
 
         </message>
     </context>

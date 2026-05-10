@@ -137,14 +137,46 @@ QString category_language_sort_key(CategoryLanguage language)
     return categoryLanguageToString(language);
 }
 
-QString category_language_bucket_label(CategoryLanguage language)
+QString category_language_sort_key(QAction* action, CategoryLanguage language)
 {
-    const QString key = category_language_sort_key(language);
+    if (!action) {
+        return category_language_sort_key(language);
+    }
+
+    const QString action_text = action->text().trimmed();
+    if (!action_text.isEmpty()) {
+        return action_text;
+    }
+    return category_language_sort_key(language);
+}
+
+QChar category_language_bucket_initial(const QString& key)
+{
+    const QString normalized = key.normalized(QString::NormalizationForm_KD);
+    for (const QChar ch : normalized) {
+        const auto category = ch.category();
+        if (category == QChar::Mark_NonSpacing ||
+            category == QChar::Mark_SpacingCombining ||
+            category == QChar::Mark_Enclosing) {
+            continue;
+        }
+        if (ch.isLetterOrNumber()) {
+            return ch.toUpper();
+        }
+    }
+    return QChar();
+}
+
+QString category_language_bucket_label(const QString& key)
+{
     if (key.isEmpty()) {
         return QStringLiteral("U-Z");
     }
 
-    const QChar initial = key.front().toUpper();
+    const QChar initial = category_language_bucket_initial(key);
+    if (initial.isNull()) {
+        return QStringLiteral("U-Z");
+    }
     if (initial <= QChar('C')) {
         return QStringLiteral("A-C");
     }
@@ -949,6 +981,7 @@ void MainApp::refresh_category_language_menu()
 {
     const LLMChoice choice = settings.get_llm_choice();
     const auto& supported_languages = supported_category_languages_for_llm_choice(choice);
+    std::vector<CategoryLanguage> ordered_languages = supported_languages;
 
     for (const CategoryLanguage language : all_category_languages()) {
         QAction* const action = category_language_action(language);
@@ -960,6 +993,20 @@ void MainApp::refresh_category_language_menu()
         action->setEnabled(supported);
     }
 
+    std::sort(ordered_languages.begin(),
+              ordered_languages.end(),
+              [this](CategoryLanguage lhs, CategoryLanguage rhs) {
+                  const QString lhs_key =
+                      category_language_sort_key(category_language_action(lhs), lhs);
+                  const QString rhs_key =
+                      category_language_sort_key(category_language_action(rhs), rhs);
+                  const int compare = QString::localeAwareCompare(lhs_key, rhs_key);
+                  if (compare != 0) {
+                      return compare < 0;
+                  }
+                  return categoryLanguageIndex(lhs) < categoryLanguageIndex(rhs);
+              });
+
     if (category_language_menu) {
         for (QMenu* const submenu : category_language_submenus_) {
             delete submenu;
@@ -968,16 +1015,17 @@ void MainApp::refresh_category_language_menu()
         category_language_menu->clear();
 
         constexpr std::size_t kGroupedMenuThreshold = 18;
-        if (supported_languages.size() > kGroupedMenuThreshold) {
+        if (ordered_languages.size() > kGroupedMenuThreshold) {
             QString active_bucket;
             QMenu* active_submenu = nullptr;
-            for (const CategoryLanguage language : supported_languages) {
+            for (const CategoryLanguage language : ordered_languages) {
                 QAction* const action = category_language_action(language);
                 if (!action) {
                     continue;
                 }
 
-                const QString bucket = category_language_bucket_label(language);
+                const QString bucket = category_language_bucket_label(
+                    category_language_sort_key(action, language));
                 if (!active_submenu || bucket != active_bucket) {
                     active_bucket = bucket;
                     active_submenu = category_language_menu->addMenu(bucket);
@@ -986,7 +1034,7 @@ void MainApp::refresh_category_language_menu()
                 active_submenu->addAction(action);
             }
         } else {
-            for (const CategoryLanguage language : supported_languages) {
+            for (const CategoryLanguage language : ordered_languages) {
                 QAction* const action = category_language_action(language);
                 if (action) {
                     category_language_menu->addAction(action);

@@ -2698,7 +2698,7 @@ Opdater venligst for at fortsætte. Hvis du vælger at afslutte, lukkes applikat
 
             <source>&amp;Simplified Chinese</source>
 
-            <translation>&amp;Forenklet kinesisk</translation>
+            <translation>&amp;forenklet kinesisk</translation>
 
         </message>
     </context>

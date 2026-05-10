@@ -5,6 +5,7 @@
 #include "MainAppTestAccess.hpp"
 #include "Settings.hpp"
 #include "TestHelpers.hpp"
+#include "TranslationManager.hpp"
 
 #include <QAction>
 #include <QMenu>
@@ -88,6 +89,16 @@ QStringList visible_category_language_labels(MainApp& app)
     return labels;
 }
 
+std::vector<CategoryLanguage> sorted_by_enum(std::vector<CategoryLanguage> languages)
+{
+    std::sort(languages.begin(),
+              languages.end(),
+              [](CategoryLanguage lhs, CategoryLanguage rhs) {
+                  return static_cast<int>(lhs) < static_cast<int>(rhs);
+              });
+    return languages;
+}
+
 } // namespace
 
 TEST_CASE("Gemma 3 category language menu exposes the full supported list")
@@ -107,8 +118,9 @@ TEST_CASE("Gemma 3 category language menu exposes the full supported list")
 
     MainAppTestAccess::refresh_category_language_menu(window);
 
-    CHECK(visible_category_languages(window)
-          == supported_category_languages_for_llm_choice(LLMChoice::Local_4b_Gemma));
+    CHECK(sorted_by_enum(visible_category_languages(window))
+          == sorted_by_enum(
+              supported_category_languages_for_llm_choice(LLMChoice::Local_4b_Gemma)));
 }
 
 TEST_CASE("Category language menu follows Mistral 7B support")
@@ -128,8 +140,9 @@ TEST_CASE("Category language menu follows Mistral 7B support")
 
     MainAppTestAccess::refresh_category_language_menu(window);
 
-    CHECK(visible_category_languages(window)
-          == supported_category_languages_for_llm_choice(LLMChoice::Local_7b));
+    CHECK(sorted_by_enum(visible_category_languages(window))
+          == sorted_by_enum(
+              supported_category_languages_for_llm_choice(LLMChoice::Local_7b)));
 }
 
 TEST_CASE("English-only local models force the category language menu back to English")
@@ -179,8 +192,9 @@ TEST_CASE("Custom local models expose the full category language menu")
 
     MainAppTestAccess::refresh_category_language_menu(window);
 
-    CHECK(visible_category_languages(window)
-          == supported_category_languages_for_llm_choice(LLMChoice::Custom));
+    CHECK(sorted_by_enum(visible_category_languages(window))
+          == sorted_by_enum(
+              supported_category_languages_for_llm_choice(LLMChoice::Custom)));
 }
 
 TEST_CASE("Category language menu keeps visible entries alphabetized")
@@ -195,10 +209,13 @@ TEST_CASE("Category language menu keeps visible entries alphabetized")
     Settings settings;
     REQUIRE(settings.save());
 
+    settings.set_language(Language::French);
+    TranslationManager::instance().set_language(Language::French);
+
     MainApp window(settings, /*development_mode=*/false);
     settings.set_llm_choice(LLMChoice::Local_4b_Gemma);
 
-    MainAppTestAccess::refresh_category_language_menu(window);
+    MainAppTestAccess::trigger_retranslate(window);
 
     const QStringList labels = visible_category_language_labels(window);
     QStringList sorted_labels = labels;

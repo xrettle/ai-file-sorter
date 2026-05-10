@@ -2293,7 +2293,7 @@ Veuillez mettre à jour pour continuer. Si vous choisissez de quitter, l&apos;ap
 
         <source>&amp;Swedish</source>
 
-        <translation>&amp;suédois</translation>
+        <translation>&amp;Suédois</translation>
 
     </message>
 
@@ -2303,7 +2303,7 @@ Veuillez mettre à jour pour continuer. Si vous choisissez de quitter, l&apos;ap
 
         <source>&amp;Icelandic</source>
 
-        <translation>&amp;islandais</translation>
+        <translation>&amp;Islandais</translation>
 
     </message>
 
@@ -2313,7 +2313,7 @@ Veuillez mettre à jour pour continuer. Si vous choisissez de quitter, l&apos;ap
 
         <source>&amp;Norwegian</source>
 
-        <translation>&amp;norvégien</translation>
+        <translation>&amp;Norvégien</translation>
 
     </message>
 
@@ -2323,7 +2323,7 @@ Veuillez mettre à jour pour continuer. Si vous choisissez de quitter, l&apos;ap
 
         <source>&amp;Finnish</source>
 
-        <translation>&amp;finlandais</translation>
+        <translation>&amp;Finlandais</translation>
 
     </message>
 
@@ -2333,7 +2333,7 @@ Veuillez mettre à jour pour continuer. Si vous choisissez de quitter, l&apos;ap
 
         <source>&amp;Danish</source>
 
-        <translation>&amp;danois</translation>
+        <translation>&amp;Danois</translation>
 
     </message>
 

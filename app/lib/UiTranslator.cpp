@@ -24,6 +24,8 @@
 #include <QStatusBar>
 #include <QStringList>
 
+#include <algorithm>
+
 namespace {
 
 constexpr auto kMenuTitleFile = QT_TRANSLATE_NOOP("UiTranslator", "&File");
@@ -110,6 +112,36 @@ QString strip_mnemonic_markers(const QString& value)
         }
     }
     return result;
+}
+
+QString menu_action_sort_key(const QAction* action)
+{
+    if (!action) {
+        return QString();
+    }
+    return strip_mnemonic_markers(action->text()).trimmed();
+}
+
+void sort_menu_actions_by_label(QMenu* menu)
+{
+    if (!menu) {
+        return;
+    }
+
+    QList<QAction*> actions = menu->actions();
+    std::sort(actions.begin(),
+              actions.end(),
+              [](QAction* lhs, QAction* rhs) {
+                  return QString::localeAwareCompare(menu_action_sort_key(lhs),
+                                                     menu_action_sort_key(rhs)) < 0;
+              });
+
+    for (QAction* const action : actions) {
+        menu->removeAction(action);
+    }
+    for (QAction* const action : actions) {
+        menu->addAction(action);
+    }
 }
 
 QAction* shared_interface_language_action(const UiTranslator::Dependencies& deps,
@@ -373,6 +405,8 @@ void UiTranslator::translate_menus_and_actions() const
             entry.action->setText(tr(entry.text));
         }
     }
+
+    sort_menu_actions_by_label(deps_.menus.language_menu);
 
     if (deps_.category_language.actions) {
         for (std::size_t idx = 0; idx < deps_.category_language.actions->size(); ++idx) {

@@ -2303,7 +2303,7 @@ Bitte aktualisieren Sie, um fortzufahren. Wenn Sie Beenden wählen, wird die Anw
 
         <source>&amp;Icelandic</source>
 
-        <translation>&amp;isländisch</translation>
+        <translation>&amp;Isländisch</translation>
 
     </message>
 
@@ -2313,7 +2313,7 @@ Bitte aktualisieren Sie, um fortzufahren. Wenn Sie Beenden wählen, wird die Anw
 
         <source>&amp;Norwegian</source>
 
-        <translation>&amp;norwegisch</translation>
+        <translation>&amp;Norwegisch</translation>
 
     </message>
 
@@ -2323,7 +2323,7 @@ Bitte aktualisieren Sie, um fortzufahren. Wenn Sie Beenden wählen, wird die Anw
 
         <source>&amp;Finnish</source>
 
-        <translation>&amp;finnisch</translation>
+        <translation>&amp;Finnisch</translation>
 
     </message>
 
@@ -2333,7 +2333,7 @@ Bitte aktualisieren Sie, um fortzufahren. Wenn Sie Beenden wählen, wird die Anw
 
         <source>&amp;Danish</source>
 
-        <translation>&amp;dänisch</translation>
+        <translation>&amp;Dänisch</translation>
 
     </message>
 

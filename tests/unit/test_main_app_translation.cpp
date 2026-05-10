@@ -766,6 +766,36 @@ TEST_CASE("Interface language action labels are translated for the newly added N
     };
 
     const std::vector<ExpectedTranslation> expected = {
+        {Language::English,
+         QStringLiteral("&Swedish"),
+         QStringLiteral("&Icelandic"),
+         QStringLiteral("&Norwegian"),
+         QStringLiteral("&Finnish"),
+         QStringLiteral("&Danish")},
+        {Language::French,
+         QStringLiteral("&Suédois"),
+         QStringLiteral("&Islandais"),
+         QStringLiteral("&Norvégien"),
+         QStringLiteral("&Finlandais"),
+         QStringLiteral("&Danois")},
+        {Language::German,
+         QStringLiteral("&Schwedisch"),
+         QStringLiteral("&Isländisch"),
+         QStringLiteral("&Norwegisch"),
+         QStringLiteral("&Finnisch"),
+         QStringLiteral("&Dänisch")},
+        {Language::Hindi,
+         QStringLiteral("&स्वीडिश"),
+         QStringLiteral("&आइसलैंड का"),
+         QStringLiteral("&नार्वेजियन"),
+         QStringLiteral("&फिनिश"),
+         QStringLiteral("&डेनिश")},
+        {Language::Italian,
+         QStringLiteral("&Svedese"),
+         QStringLiteral("&Islandese"),
+         QStringLiteral("&Norvegese"),
+         QStringLiteral("&Finlandese"),
+         QStringLiteral("&Danese")},
         {Language::Swedish,
          QStringLiteral("&svenska"),
          QStringLiteral("&isländska"),
@@ -795,7 +825,37 @@ TEST_CASE("Interface language action labels are translated for the newly added N
          QStringLiteral("&islandsk"),
          QStringLiteral("&norsk"),
          QStringLiteral("&finsk"),
-         QStringLiteral("&dansk")}
+         QStringLiteral("&dansk")},
+        {Language::Spanish,
+         QStringLiteral("&Sueco"),
+         QStringLiteral("&Islandés"),
+         QStringLiteral("&Noruego"),
+         QStringLiteral("&Finlandés"),
+         QStringLiteral("&Danés")},
+        {Language::Dutch,
+         QStringLiteral("&Zweeds"),
+         QStringLiteral("&IJslands"),
+         QStringLiteral("&Noors"),
+         QStringLiteral("&Fins"),
+         QStringLiteral("&Deens")},
+        {Language::Turkish,
+         QStringLiteral("&İsveççe"),
+         QStringLiteral("&İzlandaca"),
+         QStringLiteral("&Norveççe"),
+         QStringLiteral("&Fince"),
+         QStringLiteral("&Danimarka")},
+        {Language::Korean,
+         QStringLiteral("&스웨덴어"),
+         QStringLiteral("&아이슬란드어"),
+         QStringLiteral("&노르웨이 인"),
+         QStringLiteral("&핀란드어"),
+         QStringLiteral("&덴마크 말")},
+        {Language::SimplifiedChinese,
+         QStringLiteral("&瑞典"),
+         QStringLiteral("&冰岛语"),
+         QStringLiteral("&挪威"),
+         QStringLiteral("&芬兰"),
+         QStringLiteral("&丹麦语")}
     };
 
     for (const auto& entry : expected) {
@@ -833,11 +893,11 @@ TEST_CASE("Simplified Chinese interface language action label is translated for 
         {Language::German, QStringLiteral("&Vereinfachtes Chinesisch")},
         {Language::Hindi, QStringLiteral("&सरलीकृत चीनी")},
         {Language::Italian, QStringLiteral("&Cinese semplificato")},
-        {Language::Swedish, QStringLiteral("&Förenklad kinesiska")},
-        {Language::Icelandic, QStringLiteral("&Einfölduð kínverska")},
-        {Language::Norwegian, QStringLiteral("&Forenklet kinesisk")},
-        {Language::Finnish, QStringLiteral("&Yksinkertaistettu kiina")},
-        {Language::Danish, QStringLiteral("&Forenklet kinesisk")},
+        {Language::Swedish, QStringLiteral("&förenklad kinesiska")},
+        {Language::Icelandic, QStringLiteral("&einfölduð kínverska")},
+        {Language::Norwegian, QStringLiteral("&forenklet kinesisk")},
+        {Language::Finnish, QStringLiteral("&yksinkertaistettu kiina")},
+        {Language::Danish, QStringLiteral("&forenklet kinesisk")},
         {Language::Spanish, QStringLiteral("&Chino simplificado")},
         {Language::Dutch, QStringLiteral("&Vereenvoudigd Chinees")},
         {Language::Turkish, QStringLiteral("&Basitleştirilmiş Çince")},
@@ -853,6 +913,55 @@ TEST_CASE("Simplified Chinese interface language action label is translated for 
 
         CAPTURE(static_cast<int>(entry.language), simplified_chinese);
         REQUIRE(simplified_chinese == entry.simplified_chinese);
+    }
+}
+
+TEST_CASE("Interface language labels keep localized capitalization style")
+{
+    EnvVarGuard platform_guard("QT_QPA_PLATFORM", "offscreen");
+    QtAppContext qt_context;
+
+    struct ExpectedTranslation {
+        Language language;
+        const char* source;
+        QString translation;
+    };
+
+    const std::vector<ExpectedTranslation> expected = {
+        {Language::French, "&Swedish", QStringLiteral("&Suédois")},
+        {Language::French, "&Icelandic", QStringLiteral("&Islandais")},
+        {Language::French, "&Norwegian", QStringLiteral("&Norvégien")},
+        {Language::French, "&Finnish", QStringLiteral("&Finlandais")},
+        {Language::French, "&Danish", QStringLiteral("&Danois")},
+        {Language::German, "&Icelandic", QStringLiteral("&Isländisch")},
+        {Language::German, "&Norwegian", QStringLiteral("&Norwegisch")},
+        {Language::German, "&Finnish", QStringLiteral("&Finnisch")},
+        {Language::German, "&Danish", QStringLiteral("&Dänisch")},
+        {Language::Spanish, "&Swedish", QStringLiteral("&Sueco")},
+        {Language::Spanish, "&Icelandic", QStringLiteral("&Islandés")},
+        {Language::Spanish, "&Norwegian", QStringLiteral("&Noruego")},
+        {Language::Spanish, "&Finnish", QStringLiteral("&Finlandés")},
+        {Language::Spanish, "&Danish", QStringLiteral("&Danés")},
+        {Language::Italian, "&Swedish", QStringLiteral("&Svedese")},
+        {Language::Italian, "&Icelandic", QStringLiteral("&Islandese")},
+        {Language::Italian, "&Norwegian", QStringLiteral("&Norvegese")},
+        {Language::Italian, "&Finnish", QStringLiteral("&Finlandese")},
+        {Language::Italian, "&Danish", QStringLiteral("&Danese")},
+        {Language::Danish, "&Simplified Chinese", QStringLiteral("&forenklet kinesisk")},
+        {Language::Finnish, "&Simplified Chinese", QStringLiteral("&yksinkertaistettu kiina")},
+        {Language::Icelandic, "&Simplified Chinese", QStringLiteral("&einfölduð kínverska")},
+        {Language::Norwegian, "&Hindi", QStringLiteral("&hindi")},
+        {Language::Norwegian, "&Simplified Chinese", QStringLiteral("&forenklet kinesisk")},
+        {Language::Swedish, "&Simplified Chinese", QStringLiteral("&förenklad kinesiska")}
+    };
+
+    for (const auto& entry : expected) {
+        TranslationManager::instance().set_language(entry.language);
+
+        const QString translated = QCoreApplication::translate("UiTranslator", entry.source);
+
+        CAPTURE(static_cast<int>(entry.language), entry.source, translated);
+        REQUIRE(translated == entry.translation);
     }
 }
 

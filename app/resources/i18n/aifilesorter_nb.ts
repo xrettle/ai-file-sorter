@@ -2654,7 +2654,7 @@ Oppdater for å fortsette. Hvis du velger å avslutte, lukkes applikasjonen.</tr
         <message>
             <location filename="../../lib/UiTranslator.cpp" line="67" />
             <source>&amp;Hindi</source>
-            <translation>&amp;Hindi</translation>
+            <translation>&amp;hindi</translation>
         </message>
         <message>
             <source>Image analysis failed to start with the GPU backend.</source>
@@ -2698,7 +2698,7 @@ Oppdater for å fortsette. Hvis du velger å avslutte, lukkes applikasjonen.</tr
 
             <source>&amp;Simplified Chinese</source>
 
-            <translation>&amp;Forenklet kinesisk</translation>
+            <translation>&amp;forenklet kinesisk</translation>
 
         </message>
     </context>

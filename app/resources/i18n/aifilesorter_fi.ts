@@ -2698,7 +2698,7 @@ Päivitä jatkaaksesi. Jos päätät lopettaa, sovellus sulkeutuu.</translation>
 
             <source>&amp;Simplified Chinese</source>
 
-            <translation>&amp;Yksinkertaistettu kiina</translation>
+            <translation>&amp;yksinkertaistettu kiina</translation>
 
         </message>
     </context>

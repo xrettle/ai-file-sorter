@@ -365,10 +365,10 @@ Expected outcome: The full category-language list remains visible for the custom
 Run: `./build-tests/ai_file_sorter_tests "Custom local models expose the full category language menu"`
 
 #### Test case: Category language menu keeps visible entries alphabetized
-Purpose: Ensure the Settings -> Category language menu stays alphabetized even when the long Gemma/custom language list is rebuilt from grouped submenus.
-Setup: Build `MainApp` with offscreen Qt in a temporary config directory and switch settings to `Local_4b_Gemma`.
-Procedure: Refresh the category-language menu through the test access layer, capture the visible action labels, and compare them to a locale-aware sorted copy.
-Expected outcome: The visible labels are already alphabetized.
+Purpose: Ensure the Settings -> Category language menu stays alphabetized even when the long Gemma/custom language list is rebuilt from grouped submenus and translated labels are active.
+Setup: Build `MainApp` with offscreen Qt in a temporary config directory, switch the UI language to French, and set the LLM choice to `Local_4b_Gemma`.
+Procedure: Retranslate the window through the test access layer, capture the visible category-language labels, and compare them to a locale-aware sorted copy.
+Expected outcome: The translated visible labels are already alphabetized.
 Run: `./build-tests/ai_file_sorter_tests "Category language menu keeps visible entries alphabetized"`
 
 #### Test case: Full Gemma 3 category language menus are compartmentalized into submenus
@@ -383,8 +383,8 @@ Run: `./build-tests/ai_file_sorter_tests "Full Gemma 3 category language menus a
 #### Test case: UiTranslator updates menus, actions, and controls
 Purpose: Validate that the UI translator updates all primary controls, menus, and stateful labels in a consistent pass, including category-language actions now generated from the expanded catalog.
 Setup: Build a test harness with a `QMainWindow`, many UI controls, a full interface-language action group that now includes Hindi, Simplified Chinese, Swedish, Icelandic, Norwegian, Finnish, Danish, and Korean, plus a generated category-language action array covering the expanded catalog, and a translator state set to French in settings. Use a translation function that returns the input string to test label wiring rather than actual translation files.
-Procedure: Call `retranslate_all()` and verify the text of buttons, checkboxes, top-level menus, language menus, representative category-language actions, status labels, and the file explorer dock title. Also verify the language action group selection.
-Expected outcome: All UI elements show the expected English strings, including File/Edit/View, the interface/category language menus, the `Reset learned behavior…` and `Clear cache…` Settings actions, representative category-language labels such as `Hindi`, `Japanese`, `Simplified Chinese`, and `Traditional Chinese`, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
+Procedure: Call `retranslate_all()` and verify the text of buttons, checkboxes, top-level menus, language menus, representative category-language actions, status labels, and the file explorer dock title. Also verify the interface-language menu is re-sorted alphabetically and the language action group selection stays correct.
+Expected outcome: All UI elements show the expected English strings, including File/Edit/View, the interface/category language menus, the `Reset learned behavior…` and `Clear cache…` Settings actions, representative category-language labels such as `Hindi`, `Japanese`, `Simplified Chinese`, and `Traditional Chinese`, the interface-language menu is alphabetized, and the French language action is marked checked, demonstrating the retranslate pipeline is correctly wired.
 Run: `./build-tests/ai_file_sorter_tests "*UiTranslator updates menus*"`
 
 ### `tests/unit/test_cache_maintenance_service.cpp`
@@ -1393,10 +1393,10 @@ Expected outcome: Each language loads the matching localized markdown content in
 Run: `./build-tests/ai_file_sorter_tests "Quick Start guide content follows the selected app language"`
 
 #### Test case: Interface language action labels are translated for the newly added Nordic UI languages
-Purpose: Verify the new interface-language menu entries (`&Swedish`, `&Icelandic`, `&Norwegian`, `&Finnish`, and `&Danish`) are present in the translation catalogs and render localized labels.
-Setup: Iterate the newly added Nordic UI languages through the translation manager.
+Purpose: Verify the new interface-language menu entries (`&Swedish`, `&Icelandic`, `&Norwegian`, `&Finnish`, and `&Danish`) are present in the translation catalogs and render localized labels across every supported UI language.
+Setup: Iterate all supported UI languages through the translation manager.
 Procedure: Translate the five new interface-language action labels through the `UiTranslator` context.
-Expected outcome: Each newly added Nordic UI language returns the exact expected localized menu labels for all five new language actions.
+Expected outcome: Every supported UI language returns the exact expected localized menu labels for all five new language actions.
 Run: `./build-tests/ai_file_sorter_tests "Interface language action labels are translated for the newly added Nordic UI languages"`
 
 #### Test case: Simplified Chinese interface language action label is translated for all supported UI languages
@@ -1405,6 +1405,13 @@ Setup: Iterate all supported UI languages through the translation manager.
 Procedure: Translate `&Simplified Chinese` through the `UiTranslator` context.
 Expected outcome: Every supported UI language returns the exact expected localized label for the Simplified Chinese menu action.
 Run: `./build-tests/ai_file_sorter_tests "Simplified Chinese interface language action label is translated for all supported UI languages"`
+
+#### Test case: Interface language labels keep localized capitalization style
+Purpose: Prevent mixed-case language-name menus by checking the locales that intentionally use title case and the locales that intentionally use lowercase language names.
+Setup: Iterate the affected supported UI languages through the translation manager.
+Procedure: Translate the specific outlier language labels that previously mixed title case and lowercase in the same menu.
+Expected outcome: Each checked locale returns the exact expected capitalization for those interface-language labels.
+Run: `./build-tests/ai_file_sorter_tests "Interface language labels keep localized capitalization style"`
 
 #### Test case: Quick Start and FAQ help labels are translated for all supported UI languages
 Purpose: Verify Help menu labels and the Quick Start dialog title are covered by translation catalogs.

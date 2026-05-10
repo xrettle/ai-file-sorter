@@ -2698,7 +2698,7 @@ Uppdatera för att fortsätta. Om du väljer att avsluta stängs applikationen.<
 
             <source>&amp;Simplified Chinese</source>
 
-            <translation>&amp;Förenklad kinesiska</translation>
+            <translation>&amp;förenklad kinesiska</translation>
 
         </message>
     </context>

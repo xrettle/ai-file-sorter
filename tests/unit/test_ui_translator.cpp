@@ -23,6 +23,7 @@
 #include <QString>
 #include <QToolButton>
 
+#include <algorithm>
 #include <cstddef>
 
 #ifndef _WIN32
@@ -190,6 +191,22 @@ struct UiTranslatorTestHarness {
         language_group->addAction(spanish_action);
         language_group->addAction(turkish_action);
         language_group->addAction(korean_action);
+
+        language_menu->addAction(dutch_action);
+        language_menu->addAction(english_action);
+        language_menu->addAction(french_action);
+        language_menu->addAction(german_action);
+        language_menu->addAction(hindi_action);
+        language_menu->addAction(italian_action);
+        language_menu->addAction(simplified_chinese_action);
+        language_menu->addAction(swedish_action);
+        language_menu->addAction(icelandic_action);
+        language_menu->addAction(korean_action);
+        language_menu->addAction(norwegian_action);
+        language_menu->addAction(finnish_action);
+        language_menu->addAction(danish_action);
+        language_menu->addAction(spanish_action);
+        language_menu->addAction(turkish_action);
     }
 
     void setup_category_language_actions()
@@ -353,6 +370,21 @@ void verify_primary_controls(const UiTranslatorTestHarness& h)
             QStringLiteral("Add document creation date (if available) to category name"));
 }
 
+QStringList menu_action_labels(const QMenu* menu)
+{
+    QStringList labels;
+    if (!menu) {
+        return labels;
+    }
+
+    for (QAction* const action : menu->actions()) {
+        if (action) {
+            labels.push_back(action->text().remove(QChar('&')).trimmed());
+        }
+    }
+    return labels;
+}
+
 void verify_menus_and_actions(const UiTranslatorTestHarness& h)
 {
     REQUIRE(h.file_menu->title() == QStringLiteral("&File"));
@@ -382,6 +414,15 @@ void verify_menus_and_actions(const UiTranslatorTestHarness& h)
             QStringLiteral("Log prompts and responses to stdout"));
     REQUIRE(h.run_large_whitelist_llm_test_action->text() ==
             QStringLiteral("Run large whitelist LLM test…"));
+
+    const QStringList interface_language_labels = menu_action_labels(h.language_menu);
+    QStringList sorted_labels = interface_language_labels;
+    std::sort(sorted_labels.begin(),
+              sorted_labels.end(),
+              [](const QString& lhs, const QString& rhs) {
+                  return QString::localeAwareCompare(lhs, rhs) < 0;
+              });
+    REQUIRE(interface_language_labels == sorted_labels);
 
     const QString help_title = h.help_menu->title();
     REQUIRE(help_title.endsWith(QStringLiteral("&Help")));

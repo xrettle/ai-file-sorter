@@ -2293,7 +2293,7 @@ Aggiorna per continuare. Se scegli di uscire, l&apos;applicazione verrà chiusa.
 
         <source>&amp;Swedish</source>
 
-        <translation>&amp;svedese</translation>
+        <translation>&amp;Svedese</translation>
 
     </message>
 
@@ -2303,7 +2303,7 @@ Aggiorna per continuare. Se scegli di uscire, l&apos;applicazione verrà chiusa.
 
         <source>&amp;Icelandic</source>
 
-        <translation>&amp;islandese</translation>
+        <translation>&amp;Islandese</translation>
 
     </message>
 
@@ -2313,7 +2313,7 @@ Aggiorna per continuare. Se scegli di uscire, l&apos;applicazione verrà chiusa.
 
         <source>&amp;Norwegian</source>
 
-        <translation>&amp;norvegese</translation>
+        <translation>&amp;Norvegese</translation>
 
     </message>
 
@@ -2323,7 +2323,7 @@ Aggiorna per continuare. Se scegli di uscire, l&apos;applicazione verrà chiusa.
 
         <source>&amp;Finnish</source>
 
-        <translation>&amp;finlandese</translation>
+        <translation>&amp;Finlandese</translation>
 
     </message>
 
@@ -2333,7 +2333,7 @@ Aggiorna per continuare. Se scegli di uscire, l&apos;applicazione verrà chiusa.
 
         <source>&amp;Danish</source>
 
-        <translation>&amp;danese</translation>
+        <translation>&amp;Danese</translation>
 
     </message>
 
