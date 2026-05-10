@@ -323,6 +323,22 @@ void load_status_ggml_backends_once()
     loaded = true;
 }
 
+bool status_backend_available(std::string_view backend_name)
+{
+    if (backend_name.empty()) {
+        return false;
+    }
+
+    load_status_ggml_backends_once();
+    const std::string backend_name_str(backend_name);
+    ggml_backend_reg_t backend_reg = ggml_backend_reg_by_name(backend_name_str.c_str());
+    if (!backend_reg) {
+        return false;
+    }
+
+    return ggml_backend_reg_dev_count(backend_reg) > 0;
+}
+
 std::optional<std::string> detect_status_blas_backend_label()
 {
     load_status_ggml_backends_once();
@@ -408,7 +424,20 @@ std::string detect_loaded_backend_key()
     }
 
     const char* disable_cuda = std::getenv("GGML_DISABLE_CUDA");
-    if (disable_cuda && disable_cuda[0] != '\0' && disable_cuda[0] != '0') {
+    const bool cuda_forced_off =
+        disable_cuda && disable_cuda[0] != '\0' && disable_cuda[0] != '0';
+
+    if (!cuda_forced_off && status_backend_available("CUDA")) {
+        return "cuda";
+    }
+    if (status_backend_available("Vulkan")) {
+        return "vulkan";
+    }
+    if (status_backend_available("Metal")) {
+        return "metal";
+    }
+
+    if (cuda_forced_off) {
         return "cpu";
     }
 

@@ -266,6 +266,66 @@ bool allow_direct_launch(int argc, char** argv)
     return false;
 }
 
+bool file_exists(const std::filesystem::path& path)
+{
+    std::error_code ec;
+    return std::filesystem::exists(path, ec);
+}
+
+void ensure_windows_ggml_backend_env()
+{
+    auto logger = Logger::get_logger("core_logger");
+    std::filesystem::path exe_path;
+    try {
+        exe_path = Utils::utf8_to_path(Utils::get_executable_path());
+    } catch (const std::exception&) {
+        return;
+    }
+    if (exe_path.empty()) {
+        return;
+    }
+
+    const std::filesystem::path exe_dir = exe_path.parent_path();
+    const bool has_root_ggml =
+        file_exists(exe_dir / "ggml.dll") &&
+        (file_exists(exe_dir / "ggml-cpu.dll") ||
+         file_exists(exe_dir / "ggml-vulkan.dll") ||
+         file_exists(exe_dir / "ggml-cuda.dll"));
+    if (!has_root_ggml) {
+        return;
+    }
+
+    if (!env_has_value("AI_FILE_SORTER_GGML_DIR")) {
+        set_process_env("AI_FILE_SORTER_GGML_DIR", Utils::path_to_utf8(exe_dir));
+        if (logger) {
+            logger->info("Configured AI_FILE_SORTER_GGML_DIR for direct-launch Windows runtime: '{}'",
+                         Utils::path_to_utf8(exe_dir));
+        }
+    }
+
+    if (env_has_value("AI_FILE_SORTER_GPU_BACKEND") || env_has_value("LLAMA_ARG_DEVICE")) {
+        return;
+    }
+
+    const bool has_vulkan = file_exists(exe_dir / "ggml-vulkan.dll");
+    const bool has_cuda = file_exists(exe_dir / "ggml-cuda.dll");
+
+    if (has_vulkan && !has_cuda) {
+        set_process_env("AI_FILE_SORTER_GPU_BACKEND", "vulkan");
+        set_process_env("LLAMA_ARG_DEVICE", "vulkan");
+        set_process_env("GGML_DISABLE_CUDA", "1");
+        if (logger) {
+            logger->info("Detected Vulkan-only root ggml payload; preferring Vulkan backend for direct launch.");
+        }
+    } else if (has_cuda && !has_vulkan) {
+        set_process_env("AI_FILE_SORTER_GPU_BACKEND", "cuda");
+        set_process_env("LLAMA_ARG_DEVICE", "cuda");
+        if (logger) {
+            logger->info("Detected CUDA-only root ggml payload; preferring CUDA backend for direct launch.");
+        }
+    }
+}
+
 void enable_per_monitor_dpi_awareness()
 {
     HMODULE user32 = GetModuleHandleW(L"user32.dll");
@@ -551,6 +611,8 @@ int run_application(const ParsedArguments& parsed_args)
     env_loader.load_env();
 #if defined(__APPLE__)
     ensure_ggml_backend_dir();
+#elif defined(_WIN32)
+    ensure_windows_ggml_backend_env();
 #endif
     setlocale(LC_ALL, "");
     const std::string locale_path = Utils::get_executable_path() + "/locale";
