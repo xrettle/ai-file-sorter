@@ -709,22 +709,27 @@ Pop-Location
 # --- Clean and repopulate precompiled outputs ---
 $variant = "cpu"
 $runtimeSubdir = "wocuda"
+$legacyVulkanRuntimeDir = $null
 if ($useCuda -eq "ON") {
     $variant = "cuda"
     $runtimeSubdir = "wcuda"
 } elseif ($useVulkan -eq "ON") {
     if ($enableBlas) {
         $variant = "vulkan-blas"
-        $runtimeSubdir = "wvulkan-cpu"
     } else {
         $variant = "vulkan"
-        $runtimeSubdir = "wvulkan"
     }
+    $runtimeSubdir = "wvulkan"
+    $legacyVulkanRuntimeDir = Join-Path $ggmlRuntimeRoot "wvulkan-cpu"
 }
 $variantRoot = Join-Path $precompiledRootDir $variant
 $variantBin = Join-Path $variantRoot "bin"
 $variantLib = Join-Path $variantRoot "lib"
 $runtimeDir = Join-Path $ggmlRuntimeRoot $runtimeSubdir
+
+if ($legacyVulkanRuntimeDir -and (Test-Path $legacyVulkanRuntimeDir)) {
+    Remove-Item -Recurse -Force $legacyVulkanRuntimeDir
+}
 
 foreach ($dir in @($variantBin, $variantLib, $runtimeDir)) {
     if (Test-Path $dir) {
