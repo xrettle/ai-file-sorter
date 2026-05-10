@@ -14,6 +14,7 @@
 #include <QRegularExpression>
 #include <QStringList>
 
+#include "GgmlRuntimePaths.hpp"
 #include "UpdaterLaunchOptions.hpp"
 
 #include <cstdlib>
@@ -328,15 +329,31 @@ bool loadVulkanLibrary(const QString& path) {
     return true;
 }
 
+std::filesystem::path windows_executable_path(const QString& exeDir)
+{
+    return std::filesystem::path(exeDir.toStdWString()) /
+           std::filesystem::path(QString::fromLatin1(AIFS_MAIN_EXECUTABLE_NAME).toStdWString());
+}
+
 bool isVulkanRuntimeAvailable(const QString& exeDir) {
     if (loadVulkanLibrary(QStringLiteral("vulkan-1.dll"))) {
         qInfo().noquote() << "Detected system Vulkan runtime via PATH.";
         return true;
     }
 
-    const QStringList bundledCandidates = {
-        QDir(exeDir).filePath(QStringLiteral("lib/precompiled/vulkan/bin/vulkan-1.dll")),
-    };
+    QStringList bundledCandidates;
+    const auto resolvedPayloadDir = GgmlRuntimePaths::resolve_windows_vulkan_payload_dir(
+        windows_executable_path(exeDir));
+    if (resolvedPayloadDir) {
+        bundledCandidates << QString::fromStdWString(
+            (*resolvedPayloadDir / "vulkan-1.dll").wstring());
+    } else {
+        const auto payloadCandidates = GgmlRuntimePaths::windows_vulkan_payload_candidate_dirs(
+            windows_executable_path(exeDir));
+        for (const auto& candidate : payloadCandidates) {
+            bundledCandidates << QString::fromStdWString((candidate / "vulkan-1.dll").wstring());
+        }
+    }
 
     QStringList ggmlCandidates = candidateGgmlDirectories(exeDir, QStringLiteral("wvulkan"));
     for (QString& root : ggmlCandidates) {
@@ -872,7 +889,11 @@ void configure_runtime_paths(const QString& exeDir,
         additionalDllRoots << QDir(exeDir).filePath(QStringLiteral("lib/precompiled/cuda/bin"));
     }
     if (useVulkan) {
-        additionalDllRoots << QDir(exeDir).filePath(QStringLiteral("lib/precompiled/vulkan/bin"));
+        const auto payloadCandidates = GgmlRuntimePaths::windows_vulkan_payload_candidate_dirs(
+            windows_executable_path(exeDir));
+        for (const auto& candidate : payloadCandidates) {
+            additionalDllRoots << QString::fromStdWString(candidate.wstring());
+        }
     }
     additionalDllRoots << QDir(exeDir).filePath(QStringLiteral("bin"));
     additionalDllRoots << exeDir;

@@ -686,8 +686,20 @@ if(WIN32)
     set(PRECOMPILED_CPU_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/cpu/bin")
     set(PRECOMPILED_CUDA_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/cuda/lib")
     set(PRECOMPILED_CUDA_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/cuda/bin")
-    set(PRECOMPILED_VULKAN_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/vulkan/lib")
-    set(PRECOMPILED_VULKAN_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/vulkan/bin")
+    set(PRECOMPILED_VULKAN_ROOT_DIR "")
+    foreach(_aifs_precompiled_vulkan_candidate
+            "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/vulkan-blas"
+            "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/vulkan")
+        if(EXISTS "${_aifs_precompiled_vulkan_candidate}/bin")
+            set(PRECOMPILED_VULKAN_ROOT_DIR "${_aifs_precompiled_vulkan_candidate}")
+            break()
+        endif()
+    endforeach()
+    if(PRECOMPILED_VULKAN_ROOT_DIR STREQUAL "")
+        set(PRECOMPILED_VULKAN_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/precompiled/vulkan-blas")
+    endif()
+    set(PRECOMPILED_VULKAN_LIB_DIR "${PRECOMPILED_VULKAN_ROOT_DIR}/lib")
+    set(PRECOMPILED_VULKAN_BIN_DIR "${PRECOMPILED_VULKAN_ROOT_DIR}/bin")
     set(LLAMA_CPU_IMPORT "${PRECOMPILED_CPU_LIB_DIR}/llama.lib")
     set(LLAMA_CPU_DLL "${PRECOMPILED_CPU_BIN_DIR}/llama.dll")
     if(NOT EXISTS "${LLAMA_CPU_IMPORT}")
@@ -840,6 +852,7 @@ if(WIN32 AND _aifs_windows_enable_starter)
     set(STARTER_TARGET StartAiFileSorter)
     add_executable(${STARTER_TARGET} WIN32
         "${CMAKE_CURRENT_SOURCE_DIR}/startapp_windows.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/GgmlRuntimePaths.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/WindowsCudaProbe.cpp"
     )
     set_target_properties(${STARTER_TARGET} PROPERTIES

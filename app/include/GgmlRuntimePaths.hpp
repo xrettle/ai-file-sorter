@@ -9,6 +9,28 @@ namespace GgmlRuntimePaths {
 
 bool has_payload(const std::filesystem::path& dir);
 
+/**
+ * @brief Returns candidate packaged Vulkan payload directories for Windows.
+ *
+ * The returned list prefers the BLAS-enabled Vulkan payload layout and falls
+ * back to the legacy Vulkan directory layout for compatibility.
+ *
+ * @param exe_path Path to the currently running executable.
+ * @return Candidate Windows Vulkan payload directories in priority order.
+ */
+std::vector<std::filesystem::path> windows_vulkan_payload_candidate_dirs(
+    const std::filesystem::path& exe_path);
+
+/**
+ * @brief Resolves the best packaged Vulkan payload directory for Windows.
+ *
+ * @param exe_path Path to the currently running executable.
+ * @return The first existing Vulkan payload directory that contains the
+ * required Windows runtime DLLs, or `std::nullopt` when none are usable.
+ */
+std::optional<std::filesystem::path> resolve_windows_vulkan_payload_dir(
+    const std::filesystem::path& exe_path);
+
 std::vector<std::filesystem::path> macos_candidate_dirs(
     const std::filesystem::path& exe_path,
     std::string_view ggml_subdir);

@@ -549,6 +549,20 @@ Procedure: Call `Utils::sanitize_path_label()`.
 Expected outcome: The invalid byte is removed and the returned label remains valid UTF-8 text.
 Run: `./build-tests/ai_file_sorter_tests "sanitize_path_label strips invalid UTF-8 bytes"`
 
+#### Test case: Windows Vulkan payload candidates prefer the BLAS runtime layout
+Purpose: Ensure Windows runtime lookup prefers the packaged `vulkan-blas` payload before the legacy Vulkan layout.
+Setup: Construct a Windows executable path under a representative install root.
+Procedure: Call `GgmlRuntimePaths::windows_vulkan_payload_candidate_dirs()`.
+Expected outcome: The first candidate is `lib/precompiled/vulkan-blas/bin` and the second is `lib/precompiled/vulkan/bin`.
+Run: `./build-tests/ai_file_sorter_tests "Windows Vulkan payload candidates prefer the BLAS runtime layout"`
+
+#### Test case: Windows Vulkan payload resolution prefers the BLAS runtime layout
+Purpose: Ensure Windows runtime lookup resolves the BLAS-enabled Vulkan payload when both layouts exist.
+Setup: Create temporary `vulkan-blas/bin` and `vulkan/bin` directories containing the required runtime DLL names.
+Procedure: Call `GgmlRuntimePaths::resolve_windows_vulkan_payload_dir()`.
+Expected outcome: The resolved path points to `lib/precompiled/vulkan-blas/bin`.
+Run: `./build-tests/ai_file_sorter_tests "Windows Vulkan payload resolution prefers the BLAS runtime layout"`
+
 #### Test case: sanitize_path_label preserves valid Unicode emoji labels
 Purpose: Confirm valid Unicode labels are not stripped while sanitizing invalid path text.
 Setup: Build a UTF-8 label containing a cloud emoji.

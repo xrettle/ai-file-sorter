@@ -397,9 +397,37 @@ function Stage-BuildOutput {
         Write-Warning "PDFium DLL not found under external/pdfium/windows-x64/bin. Run app\\scripts\\vendor_doc_deps.ps1 (or app/scripts/vendor_doc_deps.sh) to populate it."
     }
 
+    function Resolve-PrecompiledVulkanBinDirectory {
+        param([string]$ApplicationDir)
+
+        $candidates = @(
+            (Join-Path $ApplicationDir "lib/precompiled/vulkan-blas/bin"),
+            (Join-Path $ApplicationDir "lib/precompiled/vulkan/bin")
+        )
+
+        foreach ($candidate in $candidates) {
+            if (Test-Path $candidate) {
+                return $candidate
+            }
+        }
+
+        return $candidates[0]
+    }
+
+    function Ensure-ZlibCompatibilityAlias {
+        param([string]$Directory)
+
+        $zlibRuntime = Join-Path $Directory "zlib1.dll"
+        $zCompatRuntime = Join-Path $Directory "z.dll"
+        if ((Test-Path $zlibRuntime) -and -not (Test-Path $zCompatRuntime)) {
+            Copy-Item $zlibRuntime -Destination $zCompatRuntime -Force
+            Write-Output "Created z.dll compatibility alias from zlib1.dll in $Directory"
+        }
+    }
+
     $precompiledCpuBin = Join-Path $appDir "lib/precompiled/cpu/bin"
     $precompiledCudaBin = Join-Path $appDir "lib/precompiled/cuda/bin"
-    $precompiledVulkanBin = Join-Path $appDir "lib/precompiled/vulkan/bin"
+    $precompiledVulkanBin = Resolve-PrecompiledVulkanBinDirectory -ApplicationDir $appDir
 
     $destWocuda = Join-Path $outputDir "lib/ggml/wocuda"
     $destWcuda = Join-Path $outputDir "lib/ggml/wcuda"
@@ -560,6 +588,8 @@ function Stage-BuildOutput {
     } else {
         Remove-RootGgmlRuntimeDlls -Directory $outputDir
     }
+
+    Ensure-ZlibCompatibilityAlias -Directory $outputDir
 }
 
 if (-not (Test-Path (Join-Path $llamaDir "CMakeLists.txt"))) {
